@@ -18,7 +18,7 @@ class misc(commands.Cog):
         await ctx.respond(embed=embed)
 
     @discord.slash_command(name="invite", description="Get the bot's invite")
-    async def ping(self, ctx):
+    async def invite(self, ctx):
         embed = discord.Embed(
             title="Bot Invite",
             description=f"Invite the bot [here](https://discord.com/oauth2/authorize?client_id=1255047241786200065)",
