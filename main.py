@@ -20,6 +20,29 @@ if not os.path.exists("db/"):
 
 start_time = time.time()
 
+## ticket db
+async def create_tickets_db():
+    db_path = "./db/tickets.db"
+    if not os.path.exists("./db"):
+        os.makedirs("./db")
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("CREATE TABLE IF NOT EXISTS db_init (init INTEGER)")
+        await db.commit()
+
+#ticket interactions
+@bot.event
+async def on_interaction(interaction):
+    if interaction.type == discord.InteractionType.component:
+        await bot.get_cog("TicketSystem").on_button_click(interaction)
+
+## warn database
+async def create_warns_db():
+    db_path = "./db/warns.db"
+    if not os.path.exists("./db"):
+        os.makedirs("./db")
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("CREATE TABLE IF NOT EXISTS db_init (init INTEGER)")
+        await db.commit()
 
 def get_uptime():
     current_time = time.time()
