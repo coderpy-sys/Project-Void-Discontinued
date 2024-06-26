@@ -6,7 +6,7 @@ from colorama import Fore, Style, Back
 import aiosqlite
 import time
 import random
-
+#
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 intents = discord.Intents.all()
