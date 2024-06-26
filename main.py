@@ -6,7 +6,7 @@ from colorama import Fore, Style, Back
 import aiosqlite
 import time
 import random
-#
+
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 intents = discord.Intents.all()
@@ -29,7 +29,6 @@ def get_uptime():
     days, hours = divmod(hours, 24)
     return f"{days}d {hours}h {minutes}m {seconds}s"
 
-
 @bot.event
 async def on_ready():
     print(f"{Fore.BLUE}INFO:{Style.RESET_ALL} Bot is running!{Style.RESET_ALL} ")
@@ -39,23 +38,9 @@ async def on_ready():
     setattr(bot, "db", aiosqlite.connect("./db/database.db"))
     async with bot.db as db:
         await db.execute(
-            "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, level INTEGER, coins INTEGER, afk INTEGER, xp INTEGER DEFAULT 0, xp_cooldown INTEGER DEFAULT 0, last_message_time REAL DEFAULT 0)"
-        )
-        await db.commit()
-        await db.execute(
             "CREATE TABLE IF NOT EXISTS afk (guild_id INTEGER, user_id INTEGER, reason TEXT)"
         )
         await db.commit()
-
-
-def get_xp_for_next_level(level):
-    # Simple formula for XP required for next level
-    return 1000 * level
-
-
-# Cooldown period (in seconds)
-COOLDOWN_PERIOD = 120
-
 
 @bot.event
 async def on_message(message):
@@ -63,9 +48,16 @@ async def on_message(message):
         return
 
     async with aiosqlite.connect("./db/database.db") as db:
+        guild_id = message.guild.id
+        table_name = f"users_{guild_id}"
+        await db.execute(
+            f"CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY, guild_id INTEGER, xp INTEGER DEFAULT 0, level INTEGER DEFAULT 1, last_message_time REAL DEFAULT 0)"
+        )
+        await db.commit()
+
         async with db.execute(
-            "SELECT xp, level, last_message_time FROM users WHERE id = ?",
-            (message.author.id,),
+            f"SELECT xp, level, last_message_time FROM {table_name} WHERE id = ?",
+            (message.author.id,)
         ) as cursor:
             row = await cursor.fetchone()
             current_time = time.time()
@@ -73,14 +65,13 @@ async def on_message(message):
             if row:
                 xp, level, last_message_time = row
                 if last_message_time is None:
-                    last_message_time = (
-                        0  # Default to 0 if last_message_time is not set
-                    )
+                    last_message_time = 0
 
+                COOLDOWN_PERIOD = 120
                 if current_time - last_message_time >= COOLDOWN_PERIOD:
                     xp_gain = random.randint(10, 40)
                     xp += xp_gain
-                    xp_needed = get_xp_for_next_level(level)
+                    xp_needed = 1000 * level  # Function to calculate XP needed for next level
                     if xp >= xp_needed:
                         level += 1
                         xp -= xp_needed
@@ -93,44 +84,96 @@ async def on_message(message):
                             delete_after=5,
                         )
                     await db.execute(
-                        "UPDATE users SET xp = ?, level = ?, last_message_time = ? WHERE id = ?",
-                        (xp, level, current_time, message.author.id),
+                        f"UPDATE {table_name} SET xp = ?, level = ?, last_message_time = ? WHERE id = ?",
+                        (xp, level, current_time, message.author.id)
                     )
             else:
                 xp, level = random.randint(10, 40), 1
                 await db.execute(
-                    "INSERT INTO users (id, xp, level, last_message_time) VALUES (?, ?, ?, ?)",
-                    (message.author.id, xp, level, current_time),
+                    f"INSERT INTO {table_name} (id, guild_id, xp, level, last_message_time) VALUES (?, ?, ?, ?, ?)",
+                    (message.author.id, guild_id, xp, level, current_time)
                 )
             await db.commit()
 
-    # check if afk
+async def create_afk_table(guild_id):
+    table_name = f"afk_{guild_id}"
+    async with aiosqlite.connect("./db/database.db") as db:
+        await db.execute(
+            f"CREATE TABLE IF NOT EXISTS {table_name} (user_id INTEGER PRIMARY KEY, reason TEXT)"
+        )
+        await db.commit()
+
+# Function to remove AFK status for a user in a guild
+async def remove_afk_status(guild_id, user_id):
+    table_name = f"afk_{guild_id}"
+    async with aiosqlite.connect("./db/database.db") as db:
+        await db.execute(
+            f"DELETE FROM {table_name} WHERE user_id = ?",
+            (user_id,)
+        )
+        await db.commit()
+
+# Function to check if user is AFK in a guild
+async def check_afk_status(guild_id, user_id):
+    table_name = f"afk_{guild_id}"
     async with aiosqlite.connect("./db/database.db") as db:
         async with db.execute(
-            "SELECT reason FROM afk WHERE user_id = ?", (message.author.id,)
+            f"SELECT reason FROM {table_name} WHERE user_id = ?",
+            (user_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else None
+
+# Function to set AFK status for a user in a guild
+async def set_afk_status(guild_id, user_id, reason):
+    table_name = f"afk_{guild_id}"
+    async with aiosqlite.connect("./db/database.db") as db:
+        await db.execute(
+            f"INSERT OR REPLACE INTO {table_name} (user_id, reason) VALUES (?, ?)",
+            (user_id, reason)
+        )
+        await db.commit()
+
+# Example of handling AFK checks and mentions in on_message event
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # Ensure the afk table for the guild is created if not exists
+    await create_afk_table(message.guild.id)
+
+    # Check for AFK status
+    async with aiosqlite.connect("./db/database.db") as db:
+        table_name = f"afk_{message.guild.id}"
+        async with db.execute(
+            f"SELECT reason FROM {table_name} WHERE user_id = ?",
+            (message.author.id,)
         ) as cursor:
             row = await cursor.fetchone()
             if row:
-                await db.execute(
-                    "DELETE FROM afk WHERE user_id = ?", (message.author.id,)
-                )
-                await db.commit()
+                await remove_afk_status(message.guild.id, message.author.id)
                 await message.channel.send(
-                    f"{message.author.mention} You are no longer AFK."
+                    f"{message.author.mention} You are no longer AFK.",
+                    delete_after=5
                 )
 
-    # mention check for afk
+    # Mention check for AFK users
     if message.mentions:
         for user in message.mentions:
             async with aiosqlite.connect("./db/database.db") as db:
+                table_name = f"afk_{message.guild.id}"
                 async with db.execute(
-                    "SELECT reason FROM afk WHERE user_id = ?", (user.id,)
+                    f"SELECT reason FROM {table_name} WHERE user_id = ?",
+                    (user.id,)
                 ) as cursor:
                     row = await cursor.fetchone()
                     if row:
                         await message.channel.send(
-                            f"{user.display_name} is AFK: {row[0]}"
+                            f"{user.display_name} is AFK: {row[0]}",
+                            delete_after=5
                         )
+
 
 
 for filename in os.listdir("./cogs"):
