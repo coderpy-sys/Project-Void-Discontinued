@@ -71,7 +71,7 @@ async def on_message(message):
                 if current_time - last_message_time >= COOLDOWN_PERIOD:
                     xp_gain = random.randint(10, 40)
                     xp += xp_gain
-                    xp_needed = 1000 * level  # Function to calculate XP needed for next level
+                    xp_needed = 500 * level  # Function to calculate XP needed for next level
                     if xp >= xp_needed:
                         level += 1
                         xp -= xp_needed

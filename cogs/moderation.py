@@ -46,9 +46,17 @@ class Mod(commands.Cog):
     async def timeout(self, ctx, member: discord.Member, duration: int, reason: str = None):
         await ctx.defer(ephemeral=True)
         try:
-            timeout_duration = discord.utils.utcnow() + datetime.timedelta(minutes=duration)
+            timeout_duration = discord.utils.utcnow() + datetime.timedelta(seconds=duration)
             await member.timeout(timeout_duration, reason=reason)
-            await self.send_embed(ctx, "Member Timed Out", f"{member.mention} was timed out for {duration} minutes", discord.Color.blue())
+
+            if duration >= 60:
+                minutes = duration // 60
+                seconds = duration % 60
+                duration_str = f"{minutes} minutes and {seconds} seconds"
+            else:
+                duration_str = f"{duration} seconds"
+
+            await self.send_embed(ctx, "Member Timed Out", f"{member.mention} was timed out for {duration_str}", discord.Color.blue())
         except discord.Forbidden:
             await self.send_embed(ctx, "Error", "Need Higher Permissions", discord.Color.red())
         except Exception as e:
