@@ -214,9 +214,11 @@ async def on_interaction(interaction):
 @bot.command(name="status", description="Show the bot's status and uptime.")
 async def status(ctx):
     uptime = get_uptime()
+    guild_count = len(bot.guilds)  # Number of servers the bot is in
     embed = discord.Embed(title="Bot Status", color=discord.Color.blue())
     embed.add_field(name="Bot Name", value=bot.user.name, inline=True)
     embed.add_field(name="Bot ID", value=bot.user.id, inline=True)
+    embed.add_field(name="Servers Count", value=guild_count, inline=True)  # Add server count field
     embed.add_field(name="Uptime", value=uptime, inline=False)
     embed.set_thumbnail(url=bot.user.avatar.url)
     embed.set_footer(text="Made by Voidsudo")
