@@ -10,7 +10,7 @@ class AFK(commands.Cog):
 
     async def create_afk_table(self, guild_id):
         table_name = f"afk_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/afk.db") as db:
             await db.execute(
                 f"CREATE TABLE IF NOT EXISTS {table_name} (user_id INTEGER PRIMARY KEY, reason TEXT)"
             )
@@ -20,7 +20,7 @@ class AFK(commands.Cog):
     async def afk_set(self, ctx, *, reason: str):
         await self.create_afk_table(ctx.guild.id)
         table_name = f"afk_{ctx.guild.id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/afk.db") as db:
             # Check if user is already AFK in guild
             async with db.execute(
                 f"SELECT reason FROM {table_name} WHERE user_id = ?",
@@ -28,7 +28,11 @@ class AFK(commands.Cog):
             ) as cursor:
                 row = await cursor.fetchone()
                 if row:
-                    return await ctx.respond("You are already AFK in this server.")
+                    embed = discord.Embed(
+                        description="You are already AFK in this server.",
+                        color=discord.Color.red()
+                    )
+                    return await ctx.respond(embed=embed, delete_after=5)
 
             # Set user as AFK
             await db.execute(
@@ -45,18 +49,102 @@ class AFK(commands.Cog):
             )
             embed.set_footer(text="Made by Voidsudo")
 
-            await ctx.respond(embed=embed, delete_after=5)
+            try:
+                await ctx.respond(embed=embed, delete_after=5)
+            except discord.HTTPException as e:
+                print(f"Failed to respond in AFK set command: {e}")
 
     @afk.command(name="clearall", description="Clear all AFK statuses (Admin only)")
     @commands.has_permissions(administrator=True)
     async def afk_clearall(self, ctx):
         table_name = f"afk_{ctx.guild.id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/afk.db") as db:
             await db.execute(f"DROP TABLE IF EXISTS {table_name}")
             await db.commit()
 
-        await ctx.respond("Cleared all AFK statuses for this server.", delete_after=5)
+        embed = discord.Embed(
+            description="Cleared all AFK statuses for this server.",
+            color=discord.Color.green()
+        )
+        embed.set_footer(text="Made by Voidsudo")
+        try:
+            await ctx.respond(embed=embed, delete_after=5)
+        except discord.HTTPException as e:
+            print(f"Failed to respond in AFK clearall command: {e}")
 
+    async def remove_afk_status(self, guild_id, user_id):
+        table_name = f"afk_{guild_id}"
+        async with aiosqlite.connect("./db/afk.db") as db:
+            await db.execute(
+                f"DELETE FROM {table_name} WHERE user_id = ?",
+                (user_id,)
+            )
+            await db.commit()
+
+    async def check_afk_status(self, guild_id, user_id):
+        table_name = f"afk_{guild_id}"
+        async with aiosqlite.connect("./db/afk.db") as db:
+            async with db.execute(
+                f"SELECT reason FROM {table_name} WHERE user_id = ?",
+                (user_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+                return row[0] if row else None
+
+    async def set_afk_status(self, guild_id, user_id, reason):
+        table_name = f"afk_{guild_id}"
+        async with aiosqlite.connect("./db/afk.db") as db:
+            await db.execute(
+                f"INSERT OR REPLACE INTO {table_name} (user_id, reason) VALUES (?, ?)",
+                (user_id, reason)
+            )
+            await db.commit()
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+
+        await self.create_afk_table(message.guild.id)
+        async with aiosqlite.connect("./db/afk.db") as db:
+            table_name = f"afk_{message.guild.id}"
+            async with db.execute(
+                f"SELECT reason FROM {table_name} WHERE user_id = ?",
+                (message.author.id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    await self.remove_afk_status(message.guild.id, message.author.id)
+                    embed = discord.Embed(
+                        description=f"{message.author.mention} You are no longer AFK.",
+                        color=discord.Color.green()
+                    )
+                    embed.set_footer(text="Made by Voidsudo")
+                    try:
+                        await message.channel.send(embed=embed, delete_after=5)
+                    except discord.HTTPException as e:
+                        print(f"Failed to send message in on_message event: {e}")
+
+        # Mention check for AFK users
+        if message.mentions:
+            for user in message.mentions:
+                async with aiosqlite.connect("./db/afk.db") as db:
+                    table_name = f"afk_{message.guild.id}"
+                    async with db.execute(
+                        f"SELECT reason FROM {table_name} WHERE user_id = ?",
+                        (user.id,)
+                    ) as cursor:
+                        row = await cursor.fetchone()
+                        if row:
+                            embed = discord.Embed(
+                                description=f"{user.display_name} is AFK: {row[0]}",
+                                color=discord.Color.orange()
+                            )
+                            embed.set_footer(text="Made by Voidsudo")
+                            try:
+                                await message.channel.send(embed=embed, delete_after=5)
+                            except discord.HTTPException as e:
+                                print(f"Failed to send message in on_message event: {e}")
 
 def setup(bot):
     bot.add_cog(AFK(bot))
