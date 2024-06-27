@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import aiosqlite
 
-
 class AFK(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -37,7 +36,26 @@ class AFK(commands.Cog):
                 (ctx.author.id, reason),
             )
             await db.commit()
-            await ctx.respond(f"Set your AFK status to: {reason}", delete_after=5)
+
+            # Create an embed response
+            embed = discord.Embed(
+                title="AFK Status Set",
+                description=f"Set your AFK status to: {reason}",
+                color=discord.Color.orange()
+            )
+            embed.set_footer(text="Made by Voidsudo")
+
+            await ctx.respond(embed=embed, delete_after=5)
+
+    @afk.command(name="clearall", description="Clear all AFK statuses (Admin only)")
+    @commands.has_permissions(administrator=True)
+    async def afk_clearall(self, ctx):
+        table_name = f"afk_{ctx.guild.id}"
+        async with aiosqlite.connect("./db/database.db") as db:
+            await db.execute(f"DROP TABLE IF EXISTS {table_name}")
+            await db.commit()
+
+        await ctx.respond("Cleared all AFK statuses for this server.", delete_after=5)
 
 
 def setup(bot):
