@@ -101,7 +101,21 @@ class ChannelManagement(commands.Cog):
         )
         embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
-
+        
+    @commands.slash_command(name="purge", description="Purge command")
+    @commands.has_permissions(manage_messages=true)
+    async def purge(self, ctx, amount: int):
+    	await ctx.defer()
+		if amount < 1:
+			embed = discord.Embed(title="Invalid Amount", description="You must specify a valid amount of messages to purge.", color=discord.Color.red())
+		msg = await ctx.respond(embed=embed, delete_after=5)
+		
+		return
+		
+		await ctx.channel.purge(limit=amount)
+		embed = discord.Embed(title="Purge Complete", description=f"Purged {amount} messages from {ctx.channel.mention}.", color=discord.Color.green())
+		embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+		msg = await ctx.respond(embed=embed, delete_after=5)
     
 
 def setup(bot):
