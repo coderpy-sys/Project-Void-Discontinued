@@ -6,6 +6,8 @@ from colorama import Fore, Style, Back
 import aiosqlite
 import time
 import random
+import logging
+import traceback
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
@@ -80,5 +82,22 @@ async def status(ctx):
     embed.set_footer(text="Made by Voidsudo")
     await ctx.respond(embed=embed)
 
+# global error logging
+GUILD_ID = 1255769729889603635
+CHANNEL_ID = 1255821756778811462
+
+@bot.event
+async def on_error(event, *args, **kwargs):
+    logging.error(traceback.format_exc())
+    guild = bot.get_guild(GUILD_ID)
+    if guild:
+        channel = guild.get_channel(CHANNEL_ID)
+        if channel:
+            embed = discord.Embed(
+                title="An Error Occurred",
+                description=f"```{traceback.format_exc()}```",
+                color=discord.Color.red()
+            )
+            await channel.send(embed=embed)
 
 bot.run(TOKEN)
