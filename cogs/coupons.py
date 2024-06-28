@@ -68,14 +68,29 @@ class Coupon(commands.Cog):
             ) as cursor:
                 coupon = await cursor.fetchone()
                 if coupon is None:
-                    return await ctx.respond("Invalid coupon code")
+                    embed = discord.Embed(
+                        title="Error",
+                        description="Invalid Coupon Code.",
+                        color=discord.Color.red(),
+                    )
+                    return await ctx.respond(embed=embed, delete_after=5)
                 if coupon[3] == 0:
-                    return await ctx.respond("This coupon has no uses left")
+                    embed = discord.Embed(
+                        title="Error",
+                        description="This coupon has no uses left.",
+                        color=discord.Color.red(),
+                    )
+                    return await ctx.respond(embed=embed, delete_after=5)
 
                 # if user has already used coupon
                 usedby = coupon[4].split(",")
                 if str(ctx.author.id) in usedby:
-                    return await ctx.respond("You have already used this coupon")
+                    embed = discord.Embed(
+                        title="Error",
+                        description="You can only use this code once.",
+                        color=discord.Color.orange(),
+                    )
+                    return await ctx.respond(embed=embed, delete_after=5)
                 user = await self.get_user(ctx.author.id)
                 # add user to usedby
                 usedby = coupon[4]
@@ -95,7 +110,12 @@ class Coupon(commands.Cog):
                     (code,),
                 )
                 await db.commit()
-                await ctx.respond(f"Redeemed coupon for {coupon[2]} coins")
+                embed = discord.Embed(
+                        title="Coupon",
+                        description= f"Redeemed coupon for {coupon[2]} coins",
+                        color=discord.Color.red(),
+                    )
+                return await ctx.respond(embed=embed, delete_after=5)
 
 
 def setup(bot):

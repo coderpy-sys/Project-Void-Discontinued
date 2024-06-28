@@ -35,9 +35,11 @@ class Dev(commands.Cog):
     @dev.command(name="addcoins", description="Add coins to a user")
     async def addcoins(self, ctx, user: discord.Member, amount: int):
         if ctx.author.id not in self.authorized_user_ids:
-            return await ctx.respond("You do not have permission to use this command")
+            embed = discord.Embed(title="You do not have permission to use this command", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         if ctx.guild is None:
-            return await ctx.respond("This command can only be used in a server")
+            embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         user_data = await self.get_user(user.id)
         async with aiosqlite.connect("./db/economy.db") as db:
             await db.execute(
@@ -45,14 +47,21 @@ class Dev(commands.Cog):
                 (amount, user.id),
             )
             await db.commit()
-            await ctx.respond(f"Added {amount} coins to {user.name}")
+            embed = discord.Embed(
+                        title="Developer Commands",
+                        description= f"Added {amount} coins to {user.name}",
+                        color=discord.Color.green(),
+                    )
+            return await ctx.respond(embed=embed, delete_after=5)
 
     @dev.command(name="removecoins", description="Remove coins from a user")
     async def removecoins(self, ctx, user: discord.Member, amount: int):
         if ctx.author.id not in self.authorized_user_ids:
-            return await ctx.respond("You do not have permission to use this command")
+            embed = discord.Embed(title="You do not have permission to use this command", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         if ctx.guild is None:
-            return await ctx.respond("This command can only be used in a server")
+            embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         user_data = await self.get_user(user.id)
         async with aiosqlite.connect("./db/economy.db") as db:
             await db.execute(
@@ -60,37 +69,55 @@ class Dev(commands.Cog):
                 (amount, user.id),
             )
             await db.commit()
-            await ctx.respond(f"Removed {amount} coins from {user.name}")
+            embed = discord.Embed(
+                        title="Developer Commands",
+                        description= f"Removed {amount} coins to {user.name}",
+                        color=discord.Color.green(),
+                    )
+            return await ctx.respond(embed=embed, delete_after=5)
+
 
     @dev.command(name="addcoupon", description="Add a coupon")
     async def addcoupon(self, ctx, code: str, coins: int, max_uses: int):
         if ctx.author.id not in self.authorized_user_ids:
-            return await ctx.respond("You do not have permission to use this command")
+            embed = discord.Embed(title="You do not have permission to use this command", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         if ctx.guild is None:
-            return await ctx.respond("This command can only be used in a server")
+            embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         async with aiosqlite.connect("./db/coupons.db") as db:
             await db.execute(
                 "INSERT INTO coupons (code, coins, max_uses, usedby) VALUES (?, ?, ?, ?)",
                 (code, coins, max_uses, ""),
             )
             await db.commit()
-            await ctx.respond(
-                f"Added coupon {code} with {coins} coins and {max_uses} max uses"
-            )
+            embed = discord.Embed(
+                        title="Developer Commands",
+                        description= f"Added coupon {code} with {coins} coins and {max_uses} max uses",
+                        color=discord.Color.green(),
+                    )
+            return await ctx.respond(embed=embed, delete_after=5)
     
     @dev.command(name="removecoupon", description="Remove a coupon")
     async def removecoupon(self, ctx, code: str):
         if ctx.author.id not in self.authorized_user_ids:
-            return await ctx.respond("You do not have permission to use this command")
+            embed = discord.Embed(title="You do not have permission to use this command", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         if ctx.guild is None:
-            return await ctx.respond("This command can only be used in a server")
+            embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
         async with aiosqlite.connect("./db/coupons.db") as db:
             async with db.execute(
                 "SELECT * FROM coupons WHERE code = ?", (code,)
             ) as cursor:
                 coupon = await cursor.fetchone()
                 if coupon is None:
-                    return await ctx.respond("Coupon does not exist")
+                    embed = discord.Embed(
+                        title="Developer Commands",
+                        description= f"Coupon doesn't exists.",
+                        color=discord.Color.red(),
+                    )
+                    return await ctx.respond(embed=embed, delete_after=5)
                 await db.execute(
                     "DELETE FROM coupons WHERE code = ?",
                     (code,),
