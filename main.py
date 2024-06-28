@@ -77,7 +77,6 @@ async def status(ctx):
     embed.set_footer(text="Made by Voidsudo")
     await ctx.respond(embed=embed)
 
-# global error logging
 GUILD_ID = 1255769729889603635
 CHANNEL_ID = 1255821756778811462
 
