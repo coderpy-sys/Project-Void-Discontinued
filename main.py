@@ -34,11 +34,6 @@ async def setup_databases():
     await initialize_database("./db/warns.db")
     await initialize_database("./db/afk.db")
 
-#ticket interactions
-@bot.event
-async def on_interaction(interaction):
-    if interaction.type == discord.InteractionType.component:
-        await bot.get_cog("TicketSystem").on_button_click(interaction)
 
 def get_uptime():
     current_time = time.time()

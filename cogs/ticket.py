@@ -122,23 +122,32 @@ class TicketSystem(commands.Cog):
     async def on_interaction(self, interaction):
         if interaction.type == discord.InteractionType.component and interaction.data['custom_id'].startswith("create_ticket_"):
             await self.create_ticket(interaction)
+        elif interaction.type == discord.InteractionType.component and interaction.data['custom_id'].startswith("close_ticket_"):
+            await self.handle_close_ticket(interaction)
 
     async def create_ticket(self, interaction):
         guild_id = interaction.guild.id
         member = interaction.user
 
         async with aiosqlite.connect("./db/tickets.db") as db:
-            async with db.execute("SELECT ticket_limit FROM ticket_settings WHERE guild_id = ?", (guild_id,)) as cursor:
-                row = await cursor.fetchone()
-                ticket_limit = row[0] if row else 1
-
             table_name = f"user_tickets_{guild_id}"
             async with db.execute(f"SELECT COUNT(*) FROM {table_name} WHERE user_id = ?", (member.id,)) as cursor:
                 count_row = await cursor.fetchone()
                 ticket_count = count_row[0] if count_row else 0
 
-            if ticket_count >= ticket_limit:
-                await interaction.response.send_message(f"You have reached the ticket limit of {ticket_limit}. Please close an existing ticket before creating a new one.", ephemeral=True)
+            async with db.execute(f"SELECT ticket_channel_id FROM {table_name} WHERE user_id = ?", (member.id,)) as cursor:
+                ticket_rows = await cursor.fetchall()
+                existing_ticket_channels = [row[0] for row in ticket_rows]
+
+            for ticket_channel_id in existing_ticket_channels:
+                ticket_channel = interaction.guild.get_channel(ticket_channel_id)
+                if not ticket_channel:
+                    await db.execute(f"DELETE FROM {table_name} WHERE ticket_channel_id = ?", (ticket_channel_id,))
+                    await db.commit()
+                    ticket_count -= 1
+
+            if ticket_count >= self.ticket_settings[guild_id]["ticket_limit"]:
+                await interaction.response.send_message(f"You have reached the ticket limit of {self.ticket_settings[guild_id]['ticket_limit']}. Please close an existing ticket before creating a new one.", ephemeral=True)
                 return
 
         category_id = self.ticket_settings[guild_id]["category_id"]
@@ -180,46 +189,37 @@ class TicketSystem(commands.Cog):
             async with db.execute("SELECT category_id FROM ticket_settings WHERE guild_id = ?", (guild_id,)) as cursor:
                 row = await cursor.fetchone()
                 if not row or channel.category_id != row[0]:
-                    await ctx.respond("This is not a ticket channel.", ephemeral=True)
+                    await ctx.respond"This is not a ticket channel.", ephemeral=True)
                     return
 
-        await ctx.respond("Are you sure you want to close this ticket? (yes/no)")
+        button_yes = discord.ui.Button(label="Yes", style=discord.ButtonStyle.danger, custom_id=f"close_ticket_yes_{guild_id}_{channel.id}")
+        button_no = discord.ui.Button(label="No", style=discord.ButtonStyle.success, custom_id=f"close_ticket_no_{guild_id}_{channel.id}")
 
-        def check(m):
-            return m.author == ctx.author and m.content.lower() in ["yes", "no"]
+        view = discord.ui.View()
+        view.add_item(button_yes)
+        view.add_item(button_no)
 
-        msg = await self.bot.wait_for("message", check=check)
-        if msg.content.lower() == "yes":
-            await channel.delete()
+        await ctx.respond("Are you sure you want to close this ticket?", view=view)
 
-            table_name = f"user_tickets_{guild_id}"
-            async with aiosqlite.connect("./db/tickets.db") as db:
-                await db.execute(f"DELETE FROM {table_name} WHERE ticket_channel_id = ?", (channel.id,))
-                await db.commit()
-        else:
-            await ctx.respond("Ticket closure canceled.")
+    async def handle_close_ticket(self, interaction):
+        custom_id_parts = interaction.data['custom_id'].split("_")
+        if len(custom_id_parts) == 5:
+            action, _, guild_id, channel_id = custom_id_parts[0], custom_id_parts[1], custom_id_parts[2], custom_id_parts[3:]
+            guild_id = int(guild_id)
+            channel_id = int(channel_id[0])
+            if action == "close" and custom_id_parts[1] == "ticket" and custom_id_parts[2] == "yes":
+                if discord.utils.get(interaction.user.roles, name=self.ticket_role) or interaction.user.guild_permissions.administrator:
+                    channel = interaction.guild.get_channel(channel_id)
+                    await channel.delete()
 
-    @ticket.command(name="closeall", description="Close all open tickets")
-    @commands.has_permissions(administrator=True)
-    @is_ticket_permitted()
-    async def close_all_tickets(self, ctx):
-        guild_id = ctx.guild.id
-        table_name = f"user_tickets_{guild_id}"
+                    table_name = f"user_tickets_{guild_id}"
+                    async with aiosqlite.connect("./db/tickets.db") as db:
+                        await db.execute(f"DELETE FROM {table_name} WHERE ticket_channel_id = ?", (channel_id,))
+                        await db.commit()
 
-        async with aiosqlite.connect("./db/tickets.db") as db:
-            async with db.execute(f"SELECT ticket_channel_id FROM {table_name}") as cursor:
-                ticket_channels = await cursor.fetchall()
-
-        for ticket_channel_id in ticket_channels:
-            ticket_channel = ctx.guild.get_channel(ticket_channel_id[0])
-            if ticket_channel:
-                await ticket_channel.delete()
-
-        async with aiosqlite.connect("./db/tickets.db") as db:
-            await db.execute(f"DELETE FROM {table_name}")
-            await db.commit()
-
-        await ctx.respond("All tickets have been closed.")
+                    await interaction.response.send_message("Ticket closed.", ephemeral=True)
+            elif custom_id_parts[2] == "no":
+                await interaction.response.send_message("Ticket closure cancelled.", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(TicketSystem(bot))
