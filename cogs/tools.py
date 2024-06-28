@@ -89,9 +89,9 @@ class Tools(commands.Cog):
             color=0x4863A0,
         )
         embed.add_field(name="Voidsudo", value="Main Developer", inline=False)
-        embed.add_field(name="Vienne", value="Contributor", inline=False)
+        embed.add_field(name="Vienii", value="Contributor", inline=False)
+        embed.add_field(name="Shadow", value="Contributor", inline=False)
         embed.set_thumbnail(url=self.bot.user.avatar.url)
-        embed.set_footer(text="Made by Voidsudo")
         await ctx.respond(embed=embed)
 
 def setup(bot):
