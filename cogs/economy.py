@@ -84,13 +84,15 @@ class Economy(commands.Cog):
             )
 
     @economy.command(name="balance", description="Check your balance")
-    async def balance(self, ctx):
-        user = await self.get_user(ctx.author.id)
+    async def balance(self, ctx, user: discord.Member = None):
+        target_user = user if user else ctx.author
+        user_data = await self.get_user(target_user.id)
         embed = discord.Embed(
-            title="Balance",
-            description=f"You have {user['coins']} coins",
-            color=discord.Color.blue(),
+              title=f"{target_user.name}'s Balance",
+              description=f"You have {user_data['coins']} coins",
+              color=discord.Color.blue(),
         )
+        embed.set_thumbnail(url=target_user.avatar.url)
         await ctx.respond(embed=embed)
 
     @economy.command(name="help", description="Get help with economy commands")
