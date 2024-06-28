@@ -22,8 +22,6 @@ if not os.path.exists("db/"):
 
 start_time = time.time()
 
-
-
 async def initialize_database(db_path):
     if not os.path.exists(os.path.dirname(db_path)):
         os.makedirs(os.path.dirname(db_path))

@@ -5,19 +5,8 @@ import aiosqlite
 class Dev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.authorized_user_ids = [1218756435664441404, 1129675180344610867]  # Replace with your actual user IDs
-    async def initialize_db(self):
-        async with aiosqlite.connect("./db/economy.db") as db:
-            await db.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY,
-                    coins INTEGER NOT NULL,
-                    weekly_timestamp INTEGER NOT NULL,
-                    daily_timestamp INTEGER NOT NULL
-                )
-            """)
-            await db.commit()
-
+        self.authorized_user_ids = [1218756435664441404, 1129675180344610867]
+    
     async def get_user(self, user_id):
         async with aiosqlite.connect("./db/economy.db") as db:
             async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cursor:
@@ -57,6 +46,57 @@ class Dev(commands.Cog):
             )
             await db.commit()
             await ctx.respond(f"Added {amount} coins to {user.name}")
+
+    @dev.command(name="removecoins", description="Remove coins from a user")
+    async def removecoins(self, ctx, user: discord.Member, amount: int):
+        if ctx.author.id not in self.authorized_user_ids:
+            return await ctx.respond("You do not have permission to use this command")
+        if ctx.guild is None:
+            return await ctx.respond("This command can only be used in a server")
+        user_data = await self.get_user(user.id)
+        async with aiosqlite.connect("./db/economy.db") as db:
+            await db.execute(
+                "UPDATE users SET coins = coins - ? WHERE id = ?",
+                (amount, user.id),
+            )
+            await db.commit()
+            await ctx.respond(f"Removed {amount} coins from {user.name}")
+
+    @dev.command(name="addcoupon", description="Add a coupon")
+    async def addcoupon(self, ctx, code: str, coins: int, max_uses: int):
+        if ctx.author.id not in self.authorized_user_ids:
+            return await ctx.respond("You do not have permission to use this command")
+        if ctx.guild is None:
+            return await ctx.respond("This command can only be used in a server")
+        async with aiosqlite.connect("./db/coupons.db") as db:
+            await db.execute(
+                "INSERT INTO coupons (code, coins, max_uses, usedby) VALUES (?, ?, ?, ?)",
+                (code, coins, max_uses, ""),
+            )
+            await db.commit()
+            await ctx.respond(
+                f"Added coupon {code} with {coins} coins and {max_uses} max uses"
+            )
+    
+    @dev.command(name="removecoupon", description="Remove a coupon")
+    async def removecoupon(self, ctx, code: str):
+        if ctx.author.id not in self.authorized_user_ids:
+            return await ctx.respond("You do not have permission to use this command")
+        if ctx.guild is None:
+            return await ctx.respond("This command can only be used in a server")
+        async with aiosqlite.connect("./db/coupons.db") as db:
+            async with db.execute(
+                "SELECT * FROM coupons WHERE code = ?", (code,)
+            ) as cursor:
+                coupon = await cursor.fetchone()
+                if coupon is None:
+                    return await ctx.respond("Coupon does not exist")
+                await db.execute(
+                    "DELETE FROM coupons WHERE code = ?",
+                    (code,),
+                )
+                await db.commit()
+                await ctx.respond(f"Removed coupon {code}")
 
 def setup(bot):
     bot.add_cog(Dev(bot))
