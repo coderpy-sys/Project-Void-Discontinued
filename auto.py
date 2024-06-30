@@ -1,29 +1,24 @@
 import subprocess
-import time
+import threading
 
 def start_process(script_name):
     return subprocess.Popen(["python3", script_name])
 
-def monitor_process(main_process, backup_process):
+def monitor_process(script_name):
     while True:
-        if main_process.poll() is not None:
-            print("main.py crashed. Restarting...")
-            main_process = start_process("main.py")
-        
-        if backup_process.poll() is not None:
-            print("auto_backup.py crashed. Not restarting...")
-            backup_process = None
-
-        time.sleep(5)
+        process = start_process(script_name)
+        process.wait()
+        print(f"{script_name} crashed. Restarting...")
 
 if __name__ == "__main__":
-    main_process = start_process("main.py")
-    backup_process = start_process("auto_backup.py")
+    main_thread = threading.Thread(target=monitor_process, args=("main.py",))
+    backup_thread = threading.Thread(target=monitor_process, args=("auto_backup.py",))
+    
+    main_thread.start()
+    backup_thread.start()
 
     try:
-        monitor_process(main_process, backup_process)
+        main_thread.join()
+        backup_thread.join()
     except KeyboardInterrupt:
-        main_process.terminate()
-        if backup_process is not None:
-            backup_process.terminate()
         print("Processes terminated.")
