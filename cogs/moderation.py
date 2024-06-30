@@ -7,7 +7,6 @@ import aiosqlite
 
 load_dotenv("../.env")
 
-
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

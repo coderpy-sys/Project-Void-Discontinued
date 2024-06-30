@@ -12,6 +12,7 @@ DB_PATHS = [
     "db/economy.db",
     "db/tickets.db",
     "db/configs.db",
+    "db/giveaways.db",
     "db/warns.db"
 ]
 
