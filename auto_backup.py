@@ -11,6 +11,7 @@ DB_PATHS = [
     "db/coupons.db",
     "db/economy.db",
     "db/tickets.db",
+    "db/configs.db",
     "db/warns.db"
 ]
 
