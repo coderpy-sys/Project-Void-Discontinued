@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import aiosqlite
 import datetime
-import os
 
 class Economy(commands.Cog):
     def __init__(self, bot):
@@ -51,18 +50,28 @@ class Economy(commands.Cog):
         now = round(datetime.datetime.now().timestamp())
 
         if user["daily_timestamp"] == 0 or user["daily_timestamp"] + 86400 <= now:
-            await ctx.respond("You have claimed your daily reward!")
             async with aiosqlite.connect("./db/economy.db") as db:
                 await db.execute(
                     "UPDATE users SET coins = coins + 100, daily_timestamp = ? WHERE id = ?",
                     (now, ctx.author.id),
                 )
                 await db.commit()
+            embed = discord.Embed(
+                title="Daily Reward",
+                description="You have claimed your daily reward!",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+            await ctx.respond(embed=embed)
         else:
             wait_time = user["daily_timestamp"] + 86400 - now
-            await ctx.respond(
-                f"You have already claimed your daily reward! Wait <t:{user['daily_timestamp'] + 86400}:R> to claim again."
+            embed = discord.Embed(
+                title="Daily Reward",
+                description=f"You have already claimed your daily reward! Wait <t:{user['daily_timestamp'] + 86400}:R> to claim again.",
+                color=discord.Color.red()
             )
+            embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+            await ctx.respond(embed=embed)
 
     @economy.command(name="weekly", description="Claim your weekly reward")
     async def weekly(self, ctx):
@@ -70,18 +79,28 @@ class Economy(commands.Cog):
         now = round(datetime.datetime.now().timestamp())
 
         if user["weekly_timestamp"] == 0 or user["weekly_timestamp"] + 604800 <= now:
-            await ctx.respond("You have claimed your weekly reward!")
             async with aiosqlite.connect("./db/economy.db") as db:
                 await db.execute(
                     "UPDATE users SET coins = coins + 700, weekly_timestamp = ? WHERE id = ?",
                     (now, ctx.author.id),
                 )
                 await db.commit()
+            embed = discord.Embed(
+                title="Weekly Reward",
+                description="You have claimed your weekly reward!",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+            await ctx.respond(embed=embed)
         else:
             wait_time = user["weekly_timestamp"] + 604800 - now
-            await ctx.respond(
-                f"You have already claimed your weekly reward! Wait <t:{user['weekly_timestamp'] + 604800}:R> to claim again."
+            embed = discord.Embed(
+                title="Weekly Reward",
+                description=f"You have already claimed your weekly reward! Wait <t:{user['weekly_timestamp'] + 604800}:R> to claim again.",
+                color=discord.Color.red()
             )
+            embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+            await ctx.respond(embed=embed)
 
     @economy.command(name="balance", description="Check your balance")
     async def balance(self, ctx, user: discord.Member = None):
@@ -102,6 +121,7 @@ class Economy(commands.Cog):
             description="**/economy daily** - Claim your daily reward\n**/economy weekly** - Claim your weekly reward\n**/economy balance** - Check your balance",
             color=discord.Color.blue(),
         )
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
 
     @economy.command(name="leaderboard", description="Show the Richest users")
@@ -110,10 +130,23 @@ class Economy(commands.Cog):
             async with db.execute("SELECT * FROM users ORDER BY coins DESC LIMIT 10") as cursor:
                 users = await cursor.fetchall()
                 embed = discord.Embed(
-                    title="Leaderboard", description="", color=discord.Color.blue()
+                    title="Economy Leaderboard", description="", color=discord.Color.blue()
                 )
-                for user in users:
-                    embed.description += f"<@{user[0]}> - {user[1]} coins\n"
+                for idx, user in enumerate(users, start=1):
+                    member = ctx.guild.get_member(user[0])
+                    if member:
+                        embed.add_field(
+                            name=f"#{idx}: {member.display_name}",
+                            value=f"_**{user[1]}**_ Void Coins",
+                            inline=False
+                        )
+                    else:
+                        embed.add_field(
+                            name=f"#{idx}: User ID {user[0]}",
+                            value=f"_**{user[1]}**_ coins",
+                            inline=False
+                        )
+                embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
                 await ctx.respond(embed=embed)
 
 def setup(bot):

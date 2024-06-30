@@ -94,7 +94,10 @@ class Welcome(commands.Cog):
             channel_id, welcome_message, color, title = config
             channel = member.guild.get_channel(channel_id)
             if channel:
+                if not welcome_message:
+                    welcome_message = "We are glad to have you, {member.mention}!"
                 welcome_message = welcome_message.format(member=member)
+                color = color or "#89CFF0"  # Set default color if color is None
                 embed = discord.Embed(
                     title=title or f"Welcome to {member.guild.name}!",
                     description=welcome_message,
@@ -104,4 +107,4 @@ class Welcome(commands.Cog):
                 await channel.send(embed=embed)
 
 def setup(bot):
-    bot.add_cog(Welcome(bot)) 
+    bot.add_cog(Welcome(bot))

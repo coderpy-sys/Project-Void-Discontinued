@@ -8,7 +8,7 @@ class Exp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cooldown = {}
-        self.xp_cooldown = 20  # Cooldown duration in seconds
+        self.xp_cooldown = 30  
 
     async def create_user_table(self, guild_id):
         table_name = f"users_{guild_id}"
@@ -49,7 +49,7 @@ class Exp(commands.Cog):
                 row = await cursor.fetchone()
                 if row:
                     current_xp, current_level = row
-                    required_xp = 500 * current_level  # XP required for the current level
+                    required_xp = 100 * current_level  # XP required for the current level
                     new_xp = current_xp + xp
                     while new_xp >= required_xp:
                         new_xp -= required_xp
@@ -95,7 +95,7 @@ class Exp(commands.Cog):
             description=f"Added {amount} XP to {member.mention}",
             color=discord.Color.green()
         )
-        embed.set_footer(text="Made by Voidsudo")
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         
         await ctx.respond(embed=embed)
 
@@ -110,7 +110,7 @@ class Exp(commands.Cog):
             color=discord.Color.blue()
         )
         embed.set_thumbnail(url=member.avatar.url)
-        embed.set_footer(text="Made by Voidsudo")
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         
         await ctx.respond(embed=embed)
 
@@ -125,8 +125,7 @@ class Exp(commands.Cog):
         embed.add_field(name="Level", value=level, inline=True)
         embed.add_field(name="XP", value=xp, inline=True)
         embed.set_thumbnail(url=ctx.author.avatar.url)
-        embed.set_footer(text="Made by Voidsudo")
-        
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
 
     @exp.command(name="leaderboard", description="Show the leaderboard for XP and levels")
@@ -160,9 +159,7 @@ class Exp(commands.Cog):
                         value=f"Level {level} with {xp} XP",
                         inline=False
                     )
-
-        embed.set_footer(text="Made by Voidsudo")
-        
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
 
 def setup(bot):
