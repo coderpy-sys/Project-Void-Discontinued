@@ -150,13 +150,13 @@ class Exp(commands.Cog):
                 if member:
                     embed.add_field(
                         name=f"#{idx}: {member.display_name}",
-                        value=f"Level {level} with {xp} XP",
+                        value=f"Level **{level}** with **{xp}** XP",
                         inline=False
                     )
                 else:
                     embed.add_field(
                         name=f"#{idx}: User ID {user_id}",
-                        value=f"Level {level} with {xp} XP",
+                        value=f"Level **{level}** with **{xp}** XP",
                         inline=False
                     )
         embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)

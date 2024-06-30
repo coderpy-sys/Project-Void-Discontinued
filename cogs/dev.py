@@ -5,7 +5,7 @@ import aiosqlite
 class Dev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.authorized_user_ids = [1218756435664441404, 1129675180344610867]
+        self.authorized_user_ids = [1218756435664441404, 1129675180344610867, 1116705678745141339]
     
     async def get_user(self, user_id):
         async with aiosqlite.connect("./db/economy.db") as db:

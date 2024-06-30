@@ -137,13 +137,13 @@ class Economy(commands.Cog):
                     if member:
                         embed.add_field(
                             name=f"#{idx}: {member.display_name}",
-                            value=f"_**{user[1]}**_ Void Coins",
+                            value=f"**{user[1]}** Coins",
                             inline=False
                         )
                     else:
                         embed.add_field(
-                            name=f"#{idx}: User ID {user[0]}",
-                            value=f"_**{user[1]}**_ coins",
+                            name=f"#{idx}: User: {user[0]}",
+                            value=f"**{user[1]}** Coins",
                             inline=False
                         )
                 embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
