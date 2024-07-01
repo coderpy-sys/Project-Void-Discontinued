@@ -59,9 +59,5 @@ class Farm(commands.Cog):
     async def before_check_for_bio(self):
         await self.bot.wait_until_ready()
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f"{Fore.BLUE}INFO:{Style.RESET_ALL} Farm Cog is ready!{Style.RESET_ALL}")
-
 def setup(bot):
     bot.add_cog(Farm(bot))

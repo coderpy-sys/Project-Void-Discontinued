@@ -30,9 +30,11 @@ async def initialize_database(db_path):
         await db.commit()
 
 async def setup_databases():
-    await initialize_database("./db/tickets.db")
     await initialize_database("./db/warns.db")
     await initialize_database("./db/afk.db")
+    await initialize_database("./db/configs.db")
+    await initialize_database("./db/economy.db")
+    await initialize_database("./db/giveaways.db")
 
 def get_uptime():
     current_time = time.time()
@@ -89,5 +91,79 @@ async def on_error(event, *args, **kwargs):
                 color=discord.Color.red()
             )
             await channel.send(embed=embed)
+
+god = [1218756435664441404, 1129675180344610867, 1116705678745141339]
+cog = discord.SlashCommandGroup(name="cog", description="Cog commands")
+
+@cog.command()
+async def load(ctx, extension):
+    if ctx.author.id in god:
+        try:
+            bot.load_extension(f"cogs.{extension}")
+            print(f"INFO: Loaded cog: {extension}")
+            embed = loader_embed("Loaded", extension)
+            await ctx.send(embed=embed, delete_after=5)
+        except discord.errors.ExtensionNotFound:
+            embed = loader_embed("Extension Not Found", extension)
+            await ctx.send(embed=embed, delete_after=5)
+        except discord.errors.ExtensionAlreadyLoaded:
+            embed = loader_embed("Extension Already Loaded", extension)
+            await ctx.send(embed=embed, delete_after=5)
+    else:
+        embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
+        await ctx.send(embed=embed, delete_after=5)
+
+@cog.command()
+async def unload(ctx, extension):
+    if ctx.author.id in god:
+        try:
+            bot.unload_extension(f"cogs.{extension}")
+            print(f"INFO: Unloaded cog: {extension}")
+            embed = loader_embed("Unloaded", extension)
+            await ctx.send(embed=embed, delete_after=5)
+        except discord.errors.ExtensionNotFound:
+            embed = loader_embed("Extension Not Found", extension)
+            await ctx.send(embed=embed, delete_after=5)
+        except discord.errors.ExtensionNotLoaded:
+            embed = loader_embed("Extension Not Loaded", extension)
+            await ctx.send(embed=embed, delete_after=5)
+    else:
+        embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
+        await ctx.send(embed=embed, delete_after=5)
+
+@cog.command()
+async def reload(ctx, extension):
+    if ctx.author.id in god:
+        try:
+            bot.unload_extension(f"cogs.{extension}")
+            bot.load_extension(f"cogs.{extension}")
+            print(f"INFO: Reloaded cog: {extension}")
+            embed = loader_embed("Reloaded", extension)
+            await ctx.send(embed=embed, delete_after=5)
+        except discord.errors.ExtensionNotFound:
+            embed = loader_embed("Extension Not Found", extension)
+            await ctx.send(embed=embed, delete_after=5)
+        except discord.errors.ExtensionNotLoaded:
+            embed = loader_embed("Extension Not Loaded", extension)
+            await ctx.send(embed=embed, delete_after=5)
+        except discord.errors.ExtensionAlreadyLoaded:
+            embed = loader_embed("Extension Already Loaded", extension)
+            await ctx.send(embed=embed, delete_after=5)
+    else:
+        embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
+        await ctx.send(embed=embed, delete_after=5)
+
+@cog.command()
+async def list(ctx):
+    embed = discord.Embed(title="Available Cogs", description="List of cogs currently available in the bot:", color=discord.Color.blue())
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py'):
+            embed.add_field(name=f"{filename[:-3]}", value="Ready", inline=False)
+    await ctx.send(embed=embed)
+
+def loader_embed(action, description):
+    embed = discord.Embed(title="Loader", description=description, color=discord.Color.blue())
+    embed.set_author(name=action)
+    return embed
 
 bot.run(TOKEN)
