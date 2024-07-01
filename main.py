@@ -89,9 +89,8 @@ async def on_error(event, *args, **kwargs):
             await channel.send(embed=embed)
 
 god = [1218756435664441404, 1129675180344610867, 1116705678745141339]
-cog = discord.SlashCommandGroup(name="cog", description="Cog commands")
 
-@cog.command()
+@bot.command()
 async def load(ctx, extension):
     if ctx.author.id in god:
         try:
@@ -109,7 +108,7 @@ async def load(ctx, extension):
         embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
         await ctx.send(embed=embed, delete_after=5)
 
-@cog.command()
+@bot.command()
 async def unload(ctx, extension):
     if ctx.author.id in god:
         try:
@@ -127,7 +126,7 @@ async def unload(ctx, extension):
         embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
         await ctx.send(embed=embed, delete_after=5)
 
-@cog.command()
+@bot.command()
 async def reload(ctx, extension):
     if ctx.author.id in god:
         try:
@@ -149,7 +148,7 @@ async def reload(ctx, extension):
         embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
         await ctx.send(embed=embed, delete_after=5)
 
-@cog.command()
+@bot.command()
 async def list(ctx):
     embed = discord.Embed(title="Available Cogs", description="List of cogs currently available in the bot:", color=discord.Color.blue())
     for filename in os.listdir('./cogs'):
