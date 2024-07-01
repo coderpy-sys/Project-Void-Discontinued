@@ -14,7 +14,7 @@ class Farm(commands.Cog):
         self.check_for_bio.start()
 
     async def get_user(self, user_id):
-        async with aiosqlite.connect("./db/economy.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cursor:
                 user = await cursor.fetchone()
                 if user is None:
@@ -44,7 +44,7 @@ class Farm(commands.Cog):
                     if member.activity.type == discord.ActivityType.custom:
                         if member.activity.name == BIO_CHECK:
                             user = await self.get_user(member.id)
-                            async with aiosqlite.connect("./db/economy.db") as db:
+                            async with aiosqlite.connect("./db/database.db") as db:
                                 await db.execute(
                                     "UPDATE users SET coins = ? WHERE id = ?",
                                     (user["coins"] + 1, member.id),

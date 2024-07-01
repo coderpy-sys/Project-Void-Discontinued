@@ -7,7 +7,7 @@ class AutoRole(commands.Cog):
         self.bot = bot
 
     async def create_table(self, guild_id):
-        async with aiosqlite.connect("./db/configs.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(f"""
                 CREATE TABLE IF NOT EXISTS autorole_{guild_id} (
                     role_id INTEGER
@@ -17,21 +17,21 @@ class AutoRole(commands.Cog):
 
     async def set_autorole(self, guild_id, role_id):
         await self.create_table(guild_id)
-        async with aiosqlite.connect("./db/configs.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(f"DELETE FROM autorole_{guild_id}")
             await db.execute(f"INSERT INTO autorole_{guild_id} (role_id) VALUES (?)", (role_id,))
             await db.commit()
 
     async def get_autorole(self, guild_id):
         await self.create_table(guild_id)
-        async with aiosqlite.connect("./db/configs.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute(f"SELECT role_id FROM autorole_{guild_id}") as cursor:
                 row = await cursor.fetchone()
                 return row[0] if row else None
 
     async def delete_autorole(self, guild_id):
         await self.create_table(guild_id)
-        async with aiosqlite.connect("./db/configs.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(f"DELETE FROM autorole_{guild_id}")
             await db.commit()
 

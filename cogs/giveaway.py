@@ -38,7 +38,7 @@ class GiveawayModal(discord.ui.Modal):
             await interaction.response.send_message("Invalid input. Please ensure all fields are filled correctly.", ephemeral=True)
 
     async def add_giveaway(self, guild_id, channel_id, message_id, prize, end_time, num_winners, host_id):
-        async with aiosqlite.connect("./db/giveaways.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute("""
                 INSERT INTO giveaways (guild_id, channel_id, message_id, prize, end_time, num_winners, host_id, participants)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -75,7 +75,7 @@ class Giveaway(commands.Cog):
         self.bot.loop.create_task(self.initialize_db())
 
     async def initialize_db(self):
-        async with aiosqlite.connect("./db/giveaways.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS giveaways (
                     guild_id INTEGER,
@@ -92,7 +92,7 @@ class Giveaway(commands.Cog):
 
     @tasks.loop(seconds=30)
     async def check_giveaways(self):
-        async with aiosqlite.connect("./db/giveaways.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             now = int(datetime.datetime.now().timestamp())
             async with db.execute("SELECT guild_id, channel_id, message_id, prize, num_winners, participants FROM giveaways WHERE end_time <= ?", (now,)) as cursor:
                 rows = await cursor.fetchall()
@@ -112,7 +112,7 @@ class Giveaway(commands.Cog):
             await db.commit()
 
     async def add_participant(self, message_id, user_id):
-        async with aiosqlite.connect("./db/giveaways.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute("SELECT participants FROM giveaways WHERE message_id = ?", (message_id,)) as cursor:
                 row = await cursor.fetchone()
                 if row:
@@ -135,7 +135,7 @@ class Giveaway(commands.Cog):
     async def giveaway_end(self, ctx, message_id: str):
         try:
             message_id = int(message_id)
-            async with aiosqlite.connect("./db/giveaways.db") as db:
+            async with aiosqlite.connect("./db/database.db") as db:
                 await db.execute("UPDATE giveaways SET end_time = ? WHERE message_id = ?", (int(datetime.datetime.now().timestamp()), message_id))
                 await db.commit()
             await ctx.respond("The giveaway will be ended shortly.", ephemeral=True)

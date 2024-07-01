@@ -8,7 +8,7 @@ class Dev(commands.Cog):
         self.authorized_user_ids = [1218756435664441404, 1129675180344610867, 1116705678745141339]
     
     async def get_user(self, user_id):
-        async with aiosqlite.connect("./db/economy.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cursor:
                 user = await cursor.fetchone()
                 if user is None:
@@ -41,7 +41,7 @@ class Dev(commands.Cog):
             embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
             return await ctx.respond(embed=embed, delete_after=5)
         user_data = await self.get_user(user.id)
-        async with aiosqlite.connect("./db/economy.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(
                 "UPDATE users SET coins = coins + ? WHERE id = ?",
                 (amount, user.id),
@@ -63,7 +63,7 @@ class Dev(commands.Cog):
             embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
             return await ctx.respond(embed=embed, delete_after=5)
         user_data = await self.get_user(user.id)
-        async with aiosqlite.connect("./db/economy.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(
                 "UPDATE users SET coins = coins - ? WHERE id = ?",
                 (amount, user.id),
@@ -85,7 +85,7 @@ class Dev(commands.Cog):
         if ctx.guild is None:
             embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
             return await ctx.respond(embed=embed, delete_after=5)
-        async with aiosqlite.connect("./db/coupons.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(
                 "INSERT INTO coupons (code, coins, max_uses, usedby) VALUES (?, ?, ?, ?)",
                 (code, coins, max_uses, ""),
@@ -106,7 +106,7 @@ class Dev(commands.Cog):
         if ctx.guild is None:
             embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
             return await ctx.respond(embed=embed, delete_after=5)
-        async with aiosqlite.connect("./db/coupons.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute(
                 "SELECT * FROM coupons WHERE code = ?", (code,)
             ) as cursor:
@@ -133,7 +133,7 @@ class Dev(commands.Cog):
         if ctx.guild is None:
             embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
             return await ctx.respond(embed=embed, delete_after=5)
-        async with aiosqlite.connect("./db/coupons.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute("SELECT * FROM coupons") as cursor:
                 coupons = await cursor.fetchall()
                 if len(coupons) == 0:

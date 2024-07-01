@@ -9,7 +9,7 @@ class Economy(commands.Cog):
         bot.loop.create_task(self.initialize_db())
 
     async def initialize_db(self):
-        async with aiosqlite.connect("./db/economy.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY,
@@ -21,7 +21,7 @@ class Economy(commands.Cog):
             await db.commit()
 
     async def get_user(self, user_id):
-        async with aiosqlite.connect("./db/economy.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cursor:
                 user = await cursor.fetchone()
                 if user is None:
@@ -50,7 +50,7 @@ class Economy(commands.Cog):
         now = round(datetime.datetime.now().timestamp())
 
         if user["daily_timestamp"] == 0 or user["daily_timestamp"] + 86400 <= now:
-            async with aiosqlite.connect("./db/economy.db") as db:
+            async with aiosqlite.connect("./db/database.db") as db:
                 await db.execute(
                     "UPDATE users SET coins = coins + 100, daily_timestamp = ? WHERE id = ?",
                     (now, ctx.author.id),
@@ -79,7 +79,7 @@ class Economy(commands.Cog):
         now = round(datetime.datetime.now().timestamp())
 
         if user["weekly_timestamp"] == 0 or user["weekly_timestamp"] + 604800 <= now:
-            async with aiosqlite.connect("./db/economy.db") as db:
+            async with aiosqlite.connect("./db/database.db") as db:
                 await db.execute(
                     "UPDATE users SET coins = coins + 700, weekly_timestamp = ? WHERE id = ?",
                     (now, ctx.author.id),
@@ -126,7 +126,7 @@ class Economy(commands.Cog):
 
     @economy.command(name="leaderboard", description="Show the Richest users")
     async def leaderboard(self, ctx):
-        async with aiosqlite.connect("./db/economy.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute("SELECT * FROM users ORDER BY coins DESC LIMIT 10") as cursor:
                 users = await cursor.fetchall()
                 embed = discord.Embed(

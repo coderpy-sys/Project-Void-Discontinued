@@ -90,7 +90,7 @@ class Mod(commands.Cog):
 
     async def create_warn_table(self, guild_id):
         table_name = f"warns_{guild_id}"
-        async with aiosqlite.connect("./db/warns.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(
                 f"CREATE TABLE IF NOT EXISTS {table_name} (user_id INTEGER, reason TEXT)"
             )
@@ -98,7 +98,7 @@ class Mod(commands.Cog):
 
     async def add_warn(self, guild_id, user_id, reason):
         table_name = f"warns_{guild_id}"
-        async with aiosqlite.connect("./db/warns.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             await db.execute(
                 f"INSERT INTO {table_name} (user_id, reason) VALUES (?, ?)",
                 (user_id, reason)
@@ -107,7 +107,7 @@ class Mod(commands.Cog):
 
     async def get_warns(self, guild_id, user_id):
         table_name = f"warns_{guild_id}"
-        async with aiosqlite.connect("./db/warns.db") as db:
+        async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute(
                 f"SELECT reason FROM {table_name} WHERE user_id = ?",
                 (user_id,)

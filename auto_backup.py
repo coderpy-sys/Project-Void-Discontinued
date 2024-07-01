@@ -7,13 +7,7 @@ load_dotenv()
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 DB_PATHS = [
-    "db/afk.db",
-    "db/coupons.db",
-    "db/economy.db",
-    "db/tickets.db",
-    "db/configs.db",
-    "db/giveaways.db",
-    "db/warns.db"
+    "db/database.db"
 ]
 
 webhook = DiscordWebhook(
