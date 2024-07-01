@@ -125,5 +125,28 @@ class Dev(commands.Cog):
                 await db.commit()
                 await ctx.respond(f"Removed coupon {code}")
 
+    @dev.command(name="listcoupons", description="List all coupons")
+    async def listcoupons(self, ctx):
+        if ctx.author.id not in self.authorized_user_ids:
+            embed = discord.Embed(title="You do not have permission to use this command", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
+        if ctx.guild is None:
+            embed = discord.Embed(title="This command can only be used in a server", color=discord.Color.red())
+            return await ctx.respond(embed=embed, delete_after=5)
+        async with aiosqlite.connect("./db/coupons.db") as db:
+            async with db.execute("SELECT * FROM coupons") as cursor:
+                coupons = await cursor.fetchall()
+                if len(coupons) == 0:
+                    return await ctx.respond("No coupons found")
+                response = ""
+                for coupon in coupons:
+                    response += (
+                        f"Code: **{coupon[1]}**, Coins: **{coupon[2]}**, Uses: **{coupon[3]}**\n"
+                    )
+                embed = discord.Embed(
+                    title="Coupons", description=response, color=discord.Color.orange()
+                )
+                await ctx.respond(embed=embed, ephemeral=True)
+
 def setup(bot):
     bot.add_cog(Dev(bot))

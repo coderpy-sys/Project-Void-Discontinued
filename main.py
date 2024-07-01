@@ -17,48 +17,6 @@ bot = discord.Bot(intents=intents)
 intents.messages = True
 intents.guilds = True
 
-async def get_user(user_id):
-    async with aiosqlite.connect("./db/economy.db") as db:
-        async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cursor:
-            user = await cursor.fetchone()
-            if user is None:
-                await db.execute(
-                    "INSERT INTO users (id, coins, weekly_timestamp, daily_timestamp) VALUES (?, ?, ?, ?)",
-                    (user_id, 0, 0, 0),
-                )
-                await db.commit()
-                return {
-                    "coins": 0,
-                    "weekly_timestamp": 0,
-                    "daily_timestamp": 0
-                }
-            else:
-                return {
-                    "coins": user[1],
-                    "weekly_timestamp": user[2],
-                    "daily_timestamp": user[3]
-                }
-
-@tasks.loop(seconds=60)
-async def check_for_bio():
-    ulen = 0
-    for guild in bot.guilds:
-        for member in guild.members:
-            if member.activity:
-                if member.activity.type == discord.ActivityType.custom:
-                    if member.activity.name == BIO_CHECK:
-                        user = await get_user(member.id)
-                        async with aiosqlite.connect("./db/economy.db") as db:
-                            await db.execute(
-                                "UPDATE users SET coins = ? WHERE id = ?",
-                                (user["coins"] + 1, member.id),
-                            )
-                            await db.commit()
-                            ulen += 1
-    print(
-        f"{Fore.GREEN}INFO: {Style.RESET_ALL}Added 1 coin to {ulen} users{Style.RESET_ALL}"
-    )
-
 if not os.path.exists("db/"):
     os.makedirs("db/")
 
