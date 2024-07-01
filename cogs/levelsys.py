@@ -8,7 +8,7 @@ class Exp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cooldown = {}
-        self.xp_cooldown = 0  # Cooldown time in seconds
+        self.xp_cooldown = 30  # Cooldown time in seconds
 
     async def create_user_table(self, guild_id):
         table_name = f"users_{guild_id}"
@@ -132,7 +132,7 @@ class Exp(commands.Cog):
         table_name = f"users_{ctx.guild.id}"
         async with aiosqlite.connect("./db/database.db") as db:
             async with db.execute(
-                f"SELECT id, xp, level FROM {table_name} ORDER BY xp DESC LIMIT 10"
+                f"SELECT id, xp, level FROM {table_name} ORDER BY level DESC, xp DESC LIMIT 10"
             ) as cursor:
                 leaderboard_data = await cursor.fetchall()
         
