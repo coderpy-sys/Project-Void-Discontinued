@@ -9,6 +9,9 @@ import random
 import logging
 import traceback
 
+if not os.path.exists("db/"):
+    os.makedirs("db/")
+
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 BIO_CHECK = os.getenv("BIO_CHECK")
@@ -16,9 +19,6 @@ intents = discord.Intents.all()
 bot = discord.Bot(intents=intents)
 intents.messages = True
 intents.guilds = True
-
-if not os.path.exists("db/"):
-    os.makedirs("db/")
 
 start_time = time.time()
 
@@ -88,65 +88,66 @@ async def on_error(event, *args, **kwargs):
             )
             await channel.send(embed=embed)
 
-god = [1218756435664441404, 1129675180344610867, 1116705678745141339]
+dev = [1218756435664441404, 1129675180344610867, 1116705678745141339]
 
 @bot.command()
 async def load(ctx, extension):
-    if ctx.author.id in god:
+    if ctx.author.id in dev:
         try:
             bot.load_extension(f"cogs.{extension}")
             print(f"INFO: Loaded cog: {extension}")
             embed = loader_embed("Loaded", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
         except discord.errors.ExtensionNotFound:
             embed = loader_embed("Extension Not Found", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
         except discord.errors.ExtensionAlreadyLoaded:
             embed = loader_embed("Extension Already Loaded", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
     else:
         embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
-        await ctx.send(embed=embed, delete_after=5)
+        await ctx.respond(embed=embed, delete_after=5)
 
 @bot.command()
 async def unload(ctx, extension):
-    if ctx.author.id in god:
+    if ctx.author.id in dev:
         try:
             bot.unload_extension(f"cogs.{extension}")
             print(f"INFO: Unloaded cog: {extension}")
             embed = loader_embed("Unloaded", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
         except discord.errors.ExtensionNotFound:
             embed = loader_embed("Extension Not Found", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
         except discord.errors.ExtensionNotLoaded:
             embed = loader_embed("Extension Not Loaded", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
     else:
         embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
-        await ctx.send(embed=embed, delete_after=5)
+        await ctx.respond(embed=embed, delete_after=5)
 
 @bot.command()
 async def reload(ctx, extension):
-    if ctx.author.id in god:
+    if ctx.author.id in dev:
         try:
             bot.unload_extension(f"cogs.{extension}")
             bot.load_extension(f"cogs.{extension}")
             print(f"INFO: Reloaded cog: {extension}")
             embed = loader_embed("Reloaded", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
         except discord.errors.ExtensionNotFound:
             embed = loader_embed("Extension Not Found", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
         except discord.errors.ExtensionNotLoaded:
             embed = loader_embed("Extension Not Loaded", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
         except discord.errors.ExtensionAlreadyLoaded:
             embed = loader_embed("Extension Already Loaded", extension)
-            await ctx.send(embed=embed, delete_after=5)
+            await ctx.respond(embed=embed, delete_after=5)
     else:
         embed = loader_embed("Permission Denied", "You do not have permission to use this command.")
-        await ctx.send(embed=embed, delete_after=5)
+        await ctx.respond(embed=embed, delete_after=5)
+
 
 @bot.command()
 async def list(ctx):
@@ -154,10 +155,10 @@ async def list(ctx):
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             embed.add_field(name=f"{filename[:-3]}", value="Ready", inline=False)
-    await ctx.send(embed=embed)
+    await ctx.respond(embed=embed)
 
 def loader_embed(action, description):
-    embed = discord.Embed(title="Loader", description=description, color=discord.Color.blue())
+    embed = discord.Embed(title="Cogs Loader", description=description, color=discord.Color.blue())
     embed.set_author(name=action)
     return embed
 

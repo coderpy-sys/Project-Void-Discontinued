@@ -19,7 +19,7 @@ def run_backup():
         process = start_process("auto_backup.py")
         process.wait()
         print(f"{BLUE}INFO:{RESET} auto_backup.py finished. Next run in 30 minutes.")
-        time.sleep(1800)  # Wait for 30 minutes before running it again
+        time.sleep(1800)  
 
 if __name__ == "__main__":
     main_thread = threading.Thread(target=monitor_main)

@@ -39,10 +39,10 @@ class GiveawayModal(discord.ui.Modal):
 
     async def add_giveaway(self, guild_id, channel_id, message_id, prize, end_time, num_winners, host_id):
         async with aiosqlite.connect("./db/database.db") as db:
-            await db.execute("""
-                INSERT INTO giveaways (guild_id, channel_id, message_id, prize, end_time, num_winners, host_id, participants)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (guild_id, channel_id, message_id, prize, end_time, num_winners, host_id, ""))
+            await db.execute(f"""
+                INSERT INTO giveaways_{guild_id} (channel_id, message_id, prize, end_time, num_winners, host_id, participants)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (channel_id, message_id, prize, end_time, num_winners, host_id, ""))
             await db.commit()
 
     def parse_duration(self, duration_str):
@@ -76,9 +76,12 @@ class Giveaway(commands.Cog):
 
     async def initialize_db(self):
         async with aiosqlite.connect("./db/database.db") as db:
-            await db.execute("""
-                CREATE TABLE IF NOT EXISTS giveaways (
-                    guild_id INTEGER,
+            await db.commit()
+
+    async def ensure_guild_table(self, guild_id):
+        async with aiosqlite.connect("./db/database.db") as db:
+            await db.execute(f"""
+                CREATE TABLE IF NOT EXISTS giveaways_{guild_id} (
                     channel_id INTEGER,
                     message_id INTEGER,
                     prize TEXT,
@@ -94,32 +97,42 @@ class Giveaway(commands.Cog):
     async def check_giveaways(self):
         async with aiosqlite.connect("./db/database.db") as db:
             now = int(datetime.datetime.now().timestamp())
-            async with db.execute("SELECT guild_id, channel_id, message_id, prize, num_winners, participants FROM giveaways WHERE end_time <= ?", (now,)) as cursor:
-                rows = await cursor.fetchall()
-                for row in rows:
-                    guild_id, channel_id, message_id, prize, num_winners, participants = row
-                    guild = self.bot.get_guild(guild_id)
-                    channel = guild.get_channel(channel_id)
-                    message = await channel.fetch_message(message_id)
-                    participants = participants.split(',') if participants else []
-                    if participants:
-                        winners = random.sample(participants, min(num_winners, len(participants)))
-                        winner_mentions = [guild.get_member(int(winner)).mention for winner in winners]
-                        await channel.send(f"Congratulations {', '.join(winner_mentions)}! You won the giveaway for **{prize}**! :tada:")
-                    else:
-                        await channel.send("No participants for the giveaway. :pensive:")
-                    await db.execute("DELETE FROM giveaways WHERE message_id = ?", (message_id,))
-            await db.commit()
+            for guild in self.bot.guilds:
+                await self.ensure_guild_table(guild.id)
+                async with db.execute(f"SELECT channel_id, message_id, prize, num_winners, participants FROM giveaways_{guild.id} WHERE end_time <= ?", (now,)) as cursor:
+                    rows = await cursor.fetchall()
+                    for row in rows:
+                        channel_id, message_id, prize, num_winners, participants = row
+                        guild = self.bot.get_guild(guild.id)
+                        channel = guild.get_channel(channel_id)
+                        message = await channel.fetch_message(message_id)
+                        participants = participants.split(',') if participants else []
+                        if participants:
+                            # Filter out the bot's ID from participants
+                            participants = [p for p in participants if int(p) != self.bot.user.id]
+                            if participants:
+                                winners = random.sample(participants, min(num_winners, len(participants)))
+                                winner_mentions = [guild.get_member(int(winner)).mention for winner in winners]
+                                await channel.send(f"Congratulations {', '.join(winner_mentions)}! You won the giveaway for **{prize}**! :tada:")
+                            else:
+                                await channel.send("No valid participants for the giveaway. :pensive:")
+                        else:
+                            await channel.send("No participants for the giveaway. :pensive:")
+                        await db.execute(f"DELETE FROM giveaways_{guild.id} WHERE message_id = ?", (message_id,))
+                await db.commit()
 
-    async def add_participant(self, message_id, user_id):
+    async def add_participant(self, guild_id, message_id, user_id):
+        if user_id == self.bot.user.id:
+            return
         async with aiosqlite.connect("./db/database.db") as db:
-            async with db.execute("SELECT participants FROM giveaways WHERE message_id = ?", (message_id,)) as cursor:
+            await self.ensure_guild_table(guild_id)
+            async with db.execute(f"SELECT participants FROM giveaways_{guild_id} WHERE message_id = ?", (message_id,)) as cursor:
                 row = await cursor.fetchone()
                 if row:
                     participants = row[0].split(',') if row[0] else []
                     if str(user_id) not in participants:
                         participants.append(str(user_id))
-                        await db.execute("UPDATE giveaways SET participants = ? WHERE message_id = ?", (','.join(participants), message_id))
+                        await db.execute(f"UPDATE giveaways_{guild_id} SET participants = ? WHERE message_id = ?", (','.join(participants), message_id))
                         await db.commit()
 
     giveaway = discord.SlashCommandGroup(name="giveaway", description="Giveaway commands")
@@ -127,6 +140,7 @@ class Giveaway(commands.Cog):
     @giveaway.command(name="setup", description="Setup a giveaway")
     @commands.has_permissions(administrator=True)
     async def giveaway_setup(self, ctx):
+        await self.ensure_guild_table(ctx.guild.id)
         modal = GiveawayModal(self.bot, title="Giveaway Setup")
         await ctx.send_modal(modal)
 
@@ -136,16 +150,33 @@ class Giveaway(commands.Cog):
         try:
             message_id = int(message_id)
             async with aiosqlite.connect("./db/database.db") as db:
-                await db.execute("UPDATE giveaways SET end_time = ? WHERE message_id = ?", (int(datetime.datetime.now().timestamp()), message_id))
+                await self.ensure_guild_table(ctx.guild.id)
+                await db.execute(f"UPDATE giveaways_{ctx.guild.id} SET end_time = ? WHERE message_id = ?", (int(datetime.datetime.now().timestamp()), message_id))
                 await db.commit()
             await ctx.respond("The giveaway will be ended shortly.", ephemeral=True)
         except ValueError:
             await ctx.respond("Invalid message ID. Please provide a valid integer.", ephemeral=True)
 
+    @giveaway.command(name="list", description="List active giveaways")
+    async def giveaway_list(self, ctx):
+        async with aiosqlite.connect("./db/database.db") as db:
+            await self.ensure_guild_table(ctx.guild.id)
+            async with db.execute(f"SELECT channel_id, message_id, prize, end_time FROM giveaways_{ctx.guild.id}") as cursor:
+                rows = await cursor.fetchall()
+                if not rows:
+                    return await ctx.respond("There are no active giveaways.", ephemeral=True)
+
+                embed = discord.Embed(title="Active Giveaways", color=discord.Color.blue())
+                for row in rows:
+                    channel_id, message_id, prize, end_time = row
+                    end_time_str = datetime.datetime.fromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S')
+                    embed.add_field(name=f"Giveaway in <#{channel_id}>", value=f"Prize: **{prize}**\nEnds: {end_time_str}\n[Message Link](https://discord.com/channels/{ctx.guild.id}/{channel_id}/{message_id})", inline=False)
+                await ctx.respond(embed=embed, ephemeral=True)
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.emoji.name == "🎉":
-            await self.add_participant(payload.message_id, payload.user_id)
+            await self.add_participant(payload.guild_id, payload.message_id, payload.user_id)
 
 def setup(bot):
     bot.add_cog(Giveaway(bot))
