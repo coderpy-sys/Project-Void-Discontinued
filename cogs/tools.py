@@ -22,7 +22,7 @@ class Tools(commands.Cog):
         await ctx.respond(embed=embed)
         
     @commands.slash_command(name="invite", description="Get the bot invite.")
-    async def membercount(self, ctx):
+    async def invite(self, ctx):
         await ctx.defer()  
         description = f"Invite the bot from [here](https://bot.projectvoid.tech)"
         embed = discord.Embed(title="Bot Invite", description=description, color=discord.Color.blue())
