@@ -105,19 +105,19 @@ class Giveaway(commands.Cog):
                         channel_id, message_id, prize, num_winners, participants = row
                         guild = self.bot.get_guild(guild.id)
                         channel = guild.get_channel(channel_id)
-                        message = await channel.fetch_message(message_id)
-                        participants = participants.split(',') if participants else []
-                        if participants:
-                            # Filter out the bot's ID from participants
+                        try:
+                            message = await channel.fetch_message(message_id)
+                            participants = participants.split(',') if participants else []
                             participants = [p for p in participants if int(p) != self.bot.user.id]
                             if participants:
                                 winners = random.sample(participants, min(num_winners, len(participants)))
                                 winner_mentions = [guild.get_member(int(winner)).mention for winner in winners]
                                 await channel.send(f"Congratulations {', '.join(winner_mentions)}! You won the giveaway for **{prize}**! :tada:")
                             else:
-                                await channel.send("No valid participants for the giveaway. :pensive:")
-                        else:
-                            await channel.send("No participants for the giveaway. :pensive:")
+                                await channel.send("No participants for the giveaway. :pensive:")
+                            await message.delete()
+                        except discord.NotFound:
+                            pass
                         await db.execute(f"DELETE FROM giveaways_{guild.id} WHERE message_id = ?", (message_id,))
                 await db.commit()
 
