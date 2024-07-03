@@ -21,5 +21,14 @@ class Tools(commands.Cog):
         embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
         
+    @commands.slash_command(name="invite", description="Get the bot invite.")
+    async def membercount(self, ctx):
+        await ctx.defer()  
+        description = f"Invite the bot from [here](https://bot.projectvoid.tech)"
+        embed = discord.Embed(title="Bot Invite", description=description, color=discord.Color.blue())
+        embed.set_thumbnail(url=ctx.guild.icon.url)
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        await ctx.respond(embed=embed)
+        
 def setup(bot):
     bot.add_cog(Tools(bot))
