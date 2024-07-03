@@ -103,7 +103,7 @@ class Welcome(commands.Cog):
                     description=welcome_message,
                     color=discord.Color(int(color.lstrip("#"), 16))
                 )
-                embed.set_thumbnail(url=member.guild.icon.url)
+                embed.set_thumbnail(url=member.avatar.url)
                 await channel.send(embed=embed)
 
 def setup(bot):
