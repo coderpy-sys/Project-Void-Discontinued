@@ -8,11 +8,11 @@ class Exp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cooldown = {}
-        self.xp_cooldown = 30  # Cooldown time in seconds
+        self.xp_cooldown = 120 # Cooldown time in seconds
 
     async def create_user_table(self, guild_id):
         table_name = f"users_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/levelsys.db") as db:
             await db.execute(
                 f"CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER, guild_id INTEGER, xp INTEGER, level INTEGER, PRIMARY KEY (id, guild_id))"
             )
@@ -21,7 +21,7 @@ class Exp(commands.Cog):
     async def get_user_data(self, guild_id, user_id):
         await self.create_user_table(guild_id)
         table_name = f"users_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/levelsys.db") as db:
             async with db.execute(
                 f"SELECT xp, level FROM {table_name} WHERE id = ? AND guild_id = ?",
                 (user_id, guild_id)
@@ -41,7 +41,7 @@ class Exp(commands.Cog):
     async def update_user_data(self, guild_id, user_id, xp_gain):
         await self.create_user_table(guild_id)
         table_name = f"users_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/levelsys.db") as db:
             async with db.execute(
                 f"SELECT xp, level FROM {table_name} WHERE id = ? AND guild_id = ?",
                 (user_id, guild_id)
@@ -73,7 +73,7 @@ class Exp(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.bot:
+        if message.author.bot or not message.guild:
             return
 
         current_time = time.time()
@@ -94,7 +94,8 @@ class Exp(commands.Cog):
                 color=discord.Color.gold()
             )
             embed.set_thumbnail(url=message.author.avatar.url)
-            await message.channel.send(embed=embed)
+            level_up_message = await message.channel.send(embed=embed)
+            await level_up_message.delete(delay=5)
 
     exp = discord.SlashCommandGroup(name="exp", description="Experience points commands")
 
@@ -130,7 +131,7 @@ class Exp(commands.Cog):
     @exp.command(name="leaderboard", description="Show the leaderboard for XP and levels")
     async def leaderboard(self, ctx):
         table_name = f"users_{ctx.guild.id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/levelsys.db") as db:
             async with db.execute(
                 f"SELECT id, xp, level FROM {table_name} ORDER BY level DESC, xp DESC LIMIT 10"
             ) as cursor:

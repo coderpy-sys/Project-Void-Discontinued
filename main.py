@@ -30,7 +30,9 @@ async def initialize_database(db_path):
         await db.commit()
 
 async def setup_databases():
-    await initialize_database("./db/database.db")
+    await initialize_database("./db/economy.db")
+    await initialize_database("./db/configs.db")
+    await initialize_database("./db/giveaways.db")
 
 def get_uptime():
     current_time = time.time()

@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import aiosqlite
 
+# uses config database
 class AFK(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -10,7 +11,7 @@ class AFK(commands.Cog):
 
     async def create_afk_table(self, guild_id):
         table_name = f"afk_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             await db.execute(
                 f"CREATE TABLE IF NOT EXISTS {table_name} (user_id INTEGER PRIMARY KEY, reason TEXT)"
             )
@@ -20,7 +21,7 @@ class AFK(commands.Cog):
     async def afk_set(self, ctx, *, reason: str):
         await self.create_afk_table(ctx.guild.id)
         table_name = f"afk_{ctx.guild.id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             # Check if user is already AFK in guild
             async with db.execute(
                 f"SELECT reason FROM {table_name} WHERE user_id = ?",
@@ -58,7 +59,7 @@ class AFK(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def afk_clearall(self, ctx):
         table_name = f"afk_{ctx.guild.id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             await db.execute(f"DROP TABLE IF EXISTS {table_name}")
             await db.commit()
 
@@ -74,7 +75,7 @@ class AFK(commands.Cog):
 
     async def remove_afk_status(self, guild_id, user_id):
         table_name = f"afk_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             await db.execute(
                 f"DELETE FROM {table_name} WHERE user_id = ?",
                 (user_id,)
@@ -83,7 +84,7 @@ class AFK(commands.Cog):
 
     async def check_afk_status(self, guild_id, user_id):
         table_name = f"afk_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             async with db.execute(
                 f"SELECT reason FROM {table_name} WHERE user_id = ?",
                 (user_id,)
@@ -93,7 +94,7 @@ class AFK(commands.Cog):
 
     async def set_afk_status(self, guild_id, user_id, reason):
         table_name = f"afk_{guild_id}"
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             await db.execute(
                 f"INSERT OR REPLACE INTO {table_name} (user_id, reason) VALUES (?, ?)",
                 (user_id, reason)
@@ -106,7 +107,7 @@ class AFK(commands.Cog):
             return
 
         await self.create_afk_table(message.guild.id)
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             table_name = f"afk_{message.guild.id}"
             async with db.execute(
                 f"SELECT reason FROM {table_name} WHERE user_id = ?",
@@ -128,7 +129,7 @@ class AFK(commands.Cog):
         # Mention check for AFK users
         if message.mentions:
             for user in message.mentions:
-                async with aiosqlite.connect("./db/database.db") as db:
+                async with aiosqlite.connect("./db/configs.db") as db:
                     table_name = f"afk_{message.guild.id}"
                     async with db.execute(
                         f"SELECT reason FROM {table_name} WHERE user_id = ?",

@@ -8,7 +8,7 @@ class Welcome(commands.Cog):
         bot.loop.create_task(self.initialize_db())
 
     async def initialize_db(self):
-        async with aiosqlite.connect("db/database.db") as db:
+        async with aiosqlite.connect("db/configs.db") as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS welcome_config (
                     guild_id INTEGER PRIMARY KEY,
@@ -21,14 +21,14 @@ class Welcome(commands.Cog):
             await db.commit()
 
     async def get_welcome_config(self, guild_id):
-        async with aiosqlite.connect("db/database.db") as db:
+        async with aiosqlite.connect("db/configs.db") as db:
             async with db.execute("""
                 SELECT channel_id, message, color, title FROM welcome_config WHERE guild_id = ?
             """, (guild_id,)) as cursor:
                 return await cursor.fetchone()
 
     async def set_welcome_config(self, guild_id, channel_id=None, message=None, color=None, title=None):
-        async with aiosqlite.connect("db/database.db") as db:
+        async with aiosqlite.connect("db/configs.db") as db:
             await db.execute("""
                 INSERT OR REPLACE INTO welcome_config (guild_id, channel_id, message, color, title)
                 VALUES (
@@ -42,7 +42,7 @@ class Welcome(commands.Cog):
             await db.commit()
 
     async def delete_welcome_config(self, guild_id):
-        async with aiosqlite.connect("db/database.db") as db:
+        async with aiosqlite.connect("db/configs.db") as db:
             await db.execute("""
                 DELETE FROM welcome_config WHERE guild_id = ?
             """, (guild_id,))

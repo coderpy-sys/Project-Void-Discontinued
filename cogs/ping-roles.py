@@ -3,12 +3,13 @@ from discord.ext import commands
 from discord.commands import SlashCommandGroup
 import aiosqlite
 
+# uses configs configs
 class PingRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     async def create_table_if_not_exists(self, guild_id):
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             await db.execute(
                 f"CREATE TABLE IF NOT EXISTS ping_roles_{guild_id} (message_id INTEGER, reaction TEXT, role_id INTEGER)"
             )
@@ -28,7 +29,7 @@ class PingRoles(commands.Cog):
 
         await self.create_table_if_not_exists(ctx.guild.id)
 
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             await db.execute(
                 f"INSERT INTO ping_roles_{ctx.guild.id} (message_id, reaction, role_id) VALUES (?, ?, ?)",
                 (message_id, reaction, role.id)
@@ -57,7 +58,7 @@ class PingRoles(commands.Cog):
 
         await self.create_table_if_not_exists(ctx.guild.id)
 
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             await db.execute(
                 f"DELETE FROM ping_roles_{ctx.guild.id} WHERE message_id = ? AND reaction = ?",
                 (message_id, reaction)
@@ -81,7 +82,7 @@ class PingRoles(commands.Cog):
 
         await self.create_table_if_not_exists(payload.guild_id)
 
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             async with db.execute(
                 f"SELECT role_id FROM ping_roles_{payload.guild_id} WHERE message_id = ? AND reaction = ?",
                 (payload.message_id, str(payload.emoji))
@@ -102,7 +103,7 @@ class PingRoles(commands.Cog):
 
         await self.create_table_if_not_exists(payload.guild_id)
 
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/configs.db") as db:
             async with db.execute(
                 f"SELECT role_id FROM ping_roles_{payload.guild_id} WHERE message_id = ? AND reaction = ?",
                 (payload.message_id, str(payload.emoji))

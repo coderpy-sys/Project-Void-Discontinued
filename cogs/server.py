@@ -12,7 +12,7 @@ class Server(commands.Cog):
     async def server_info(self, ctx: discord.ApplicationContext):
         guild = ctx.guild
 
-        # Get server details
+        # get server details
         owner = guild.owner
         members = guild.member_count
         roles = len(guild.roles)

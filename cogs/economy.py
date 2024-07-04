@@ -9,7 +9,7 @@ class Economy(commands.Cog):
         bot.loop.create_task(self.initialize_db())
 
     async def initialize_db(self):
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/economy.db") as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY,
@@ -21,7 +21,7 @@ class Economy(commands.Cog):
             await db.commit()
 
     async def get_user(self, user_id):
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/economy.db") as db:
             async with db.execute("SELECT * FROM users WHERE id = ?", (user_id,)) as cursor:
                 user = await cursor.fetchone()
                 if user is None:
@@ -50,9 +50,9 @@ class Economy(commands.Cog):
         now = round(datetime.datetime.now().timestamp())
 
         if user["daily_timestamp"] == 0 or user["daily_timestamp"] + 86400 <= now:
-            async with aiosqlite.connect("./db/database.db") as db:
+            async with aiosqlite.connect("./db/economy.db") as db:
                 await db.execute(
-                    "UPDATE users SET coins = coins + 100, daily_timestamp = ? WHERE id = ?",
+                    "UPDATE users SET coins = coins + 50, daily_timestamp = ? WHERE id = ?",
                     (now, ctx.author.id),
                 )
                 await db.commit()
@@ -79,9 +79,9 @@ class Economy(commands.Cog):
         now = round(datetime.datetime.now().timestamp())
 
         if user["weekly_timestamp"] == 0 or user["weekly_timestamp"] + 604800 <= now:
-            async with aiosqlite.connect("./db/database.db") as db:
+            async with aiosqlite.connect("./db/economy.db") as db:
                 await db.execute(
-                    "UPDATE users SET coins = coins + 700, weekly_timestamp = ? WHERE id = ?",
+                    "UPDATE users SET coins = coins + 300, weekly_timestamp = ? WHERE id = ?",
                     (now, ctx.author.id),
                 )
                 await db.commit()
@@ -126,7 +126,7 @@ class Economy(commands.Cog):
 
     @economy.command(name="leaderboard", description="Show the Richest users")
     async def leaderboard(self, ctx):
-        async with aiosqlite.connect("./db/database.db") as db:
+        async with aiosqlite.connect("./db/economy.db") as db:
             async with db.execute("SELECT * FROM users ORDER BY coins DESC LIMIT 10") as cursor:
                 users = await cursor.fetchall()
                 embed = discord.Embed(
@@ -148,6 +148,59 @@ class Economy(commands.Cog):
                         )
                 embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
                 await ctx.respond(embed=embed)
+
+    @economy.command(name="transfer", description="Transfer coins to another user")
+    async def transfer(self, ctx, recipient: discord.Member, amount: int):
+        if recipient.id == ctx.author.id:
+            await ctx.respond("You cannot transfer coins to yourself.", ephemeral=True)
+            return
+
+        if amount <= 0:
+            await ctx.respond("The transfer amount must be positive.", ephemeral=True)
+            return
+
+        sender_data = await self.get_user(ctx.author.id)
+        recipient_data = await self.get_user(recipient.id)
+
+        if sender_data['coins'] < amount:
+            await ctx.respond("You do not have enough coins for this transfer.", ephemeral=True)
+            return
+
+        async with aiosqlite.connect("./db/economy.db") as db:
+            await db.execute("UPDATE users SET coins = coins - ? WHERE id = ?", (amount, ctx.author.id))
+            await db.execute("UPDATE users SET coins = coins + ? WHERE id = ?", (amount, recipient.id))
+            await db.commit()
+
+        embed = discord.Embed(
+            title="Transfer Successful",
+            description=f"You have transferred {amount} coins to {recipient.display_name}.",
+            color=discord.Color.green()
+        )
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        await ctx.respond(embed=embed)
+
+        try:
+            dm_embed = discord.Embed(
+                title="You Received Coins",
+                description=f"You have received {amount} coins from {ctx.author.display_name}.",
+                color=discord.Color.green()
+            )
+            await recipient.send(embed=dm_embed)
+        except discord.Forbidden:
+            pass  
+
+        guild = self.bot.get_guild(1255769729889603635)
+        if guild:
+            channel = guild.get_channel(1258218089766584441)
+            if channel:
+                transaction_embed = discord.Embed(
+                    title="Transaction Alert",
+                    description=f"{ctx.author.display_name} has transferred {amount} coins to {recipient.display_name}.",
+                    color=discord.Color.blue()
+                )
+                transaction_embed.set_footer(text=f"Transaction ID: {ctx.author.id}-{recipient.id}-{datetime.datetime.now().timestamp()}")
+                await channel.send(embed=transaction_embed)
+
 
 def setup(bot):
     bot.add_cog(Economy(bot))
