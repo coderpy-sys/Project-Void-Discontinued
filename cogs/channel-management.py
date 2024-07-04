@@ -78,7 +78,24 @@ class ChannelManagement(commands.Cog):
     async def unlock_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
             await ctx.respond("You don't have permission to unlock channels.")
-        
+
+    @commands.slash_command(name="nuke", description="Nukes the channel and recreates it with the same settings")
+    @commands.has_permissions(manage_channels=True)
+    async def nuke(self, ctx):
+        channel = ctx.channel
+        channel_position = channel.position
+        channel_name = channel.name
+        channel_category = channel.category
+        channel_permissions = channel.overwrites
+        await channel.delete()
+        new_channel = await ctx.guild.create_text_channel(
+            name=channel_name,
+            category=channel_category,
+            overwrites=channel_permissions,
+            position=channel_position
+        )
+        await new_channel.send(f"Channel has been nuked by {ctx.author.mention}.")
+
 
 def setup(bot):
     bot.add_cog(ChannelManagement(bot))

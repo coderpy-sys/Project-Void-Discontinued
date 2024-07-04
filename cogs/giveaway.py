@@ -173,6 +173,30 @@ class Giveaway(commands.Cog):
                     embed.add_field(name=f"Giveaway in <#{channel_id}>", value=f"Prize: **{prize}**\nEnds: {end_time_str}\n[Message Link](https://discord.com/channels/{ctx.guild.id}/{channel_id}/{message_id})", inline=False)
                 await ctx.respond(embed=embed, ephemeral=True)
 
+    @giveaway.command(name="reroll", description="Reroll a giveaway winner")
+    @commands.has_permissions(administrator=True)
+    async def giveaway_reroll(self, ctx, message_id: str):
+        try:
+            message_id = int(message_id)
+            async with aiosqlite.connect("./db/giveaways.db") as db:
+                await self.ensure_guild_table(ctx.guild.id)
+                async with db.execute(f"SELECT participants, prize, num_winners FROM giveaways_{ctx.guild.id} WHERE message_id = ?", (message_id,)) as cursor:
+                    row = await cursor.fetchone()
+                    if row:
+                        participants, prize, num_winners = row
+                        participants = participants.split(',') if participants else []
+                        participants = [p for p in participants if int(p) != self.bot.user.id]
+                        if participants:
+                            winners = random.sample(participants, min(num_winners, len(participants)))
+                            winner_mentions = [ctx.guild.get_member(int(winner)).mention for winner in winners]
+                            await ctx.respond(f"Congratulations {', '.join(winner_mentions)}! You won the giveaway for **{prize}**! :tada:", ephemeral=True)
+                        else:
+                            await ctx.respond("No participants for the giveaway. :pensive:", ephemeral=True)
+                    else:
+                        await ctx.respond("No giveaway found with that message ID.", ephemeral=True)
+        except ValueError:
+            await ctx.respond("Invalid message ID. Please provide a valid integer.", ephemeral=True)
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.emoji.name == "🎉":
