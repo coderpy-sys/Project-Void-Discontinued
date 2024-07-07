@@ -14,9 +14,9 @@ class Economy(commands.Cog):
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY,
                     coins INTEGER NOT NULL,
-                    bank INTEGER NOT NULL,
                     weekly_timestamp INTEGER NOT NULL,
-                    daily_timestamp INTEGER NOT NULL
+                    daily_timestamp INTEGER NOT NULL,
+                    bank INTEGER NOT NULL
                 )
             """)
             await db.commit()
@@ -27,22 +27,22 @@ class Economy(commands.Cog):
                 user = await cursor.fetchone()
                 if user is None:
                     await db.execute(
-                        "INSERT INTO users (id, coins, bank, weekly_timestamp, daily_timestamp) VALUES (?, ?, ?, ?, ?)",
+                        "INSERT INTO users (id, coins, weekly_timestamp, daily_timestamp,  bank) VALUES (?, ?, ?, ?, ?)",
                         (user_id, 0, 0, 0, 0),
                     )
                     await db.commit()
                     return {
                         "coins": 0,
-                        "bank": 0,
                         "weekly_timestamp": 0,
-                        "daily_timestamp": 0
+                        "daily_timestamp": 0,
+                        "bank": 0
                     }
                 else:
                     return {
                         "coins": user[1],
-                        "bank": user[2],
-                        "weekly_timestamp": user[3],
-                        "daily_timestamp": user[4]
+                        "weekly_timestamp": user[2],
+                        "daily_timestamp": user[3],
+                        "bank": user[4],
                     }
 
     economy = discord.SlashCommandGroup(name="economy", description="Economy commands")
