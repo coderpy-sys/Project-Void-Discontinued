@@ -12,6 +12,20 @@ class Farm(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.check_for_bio.start()
+        bot.loop.create_task(self.initialize_db())
+
+    async def initialize_db(self):
+        async with aiosqlite.connect("./db/economy.db") as db:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY,
+                    coins INTEGER NOT NULL,
+                    bank INTEGER NOT NULL,
+                    weekly_timestamp INTEGER NOT NULL,
+                    daily_timestamp INTEGER NOT NULL
+                )
+            """)
+            await db.commit()
 
     async def get_user(self, user_id):
         async with aiosqlite.connect("./db/economy.db") as db:
