@@ -15,7 +15,6 @@ class Tools(commands.Cog):
         else:
             members = ctx.guild.member_count
             description = f"This server has {members} members."
-
         embed = discord.Embed(title="Member Count", description=description, color=discord.Color.blue())
         embed.set_thumbnail(url=ctx.guild.icon.url)
         embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
@@ -27,15 +26,6 @@ class Tools(commands.Cog):
         description = f"Invite the bot from [here](https://bot.projectvoid.tech)"
         embed = discord.Embed(title="Bot Invite", description=description, color=discord.Color.blue())
         embed.set_thumbnail(url=ctx.guild.icon.url)
-        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
-        await ctx.respond(embed=embed)
-
-    @commands.slash_command(name="ping", description="Sends the bot's latency.")
-    async def ping(self, ctx):
-        await ctx.defer()
-        latency = round(self.bot.latency * 1000)  # Convert to milliseconds
-        description = f"Pong! 🏓 Latency is {latency} ms."
-        embed = discord.Embed(title="Ping", description=description, color=discord.Color.green())
         embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
         

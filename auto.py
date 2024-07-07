@@ -6,7 +6,7 @@ BLUE = "\033[94m"
 RESET = "\033[0m"
 
 def start_process(script_name):
-    return subprocess.Popen(["python", script_name])
+    return subprocess.Popen(["python3", script_name])
 
 def monitor_main():
     while True:

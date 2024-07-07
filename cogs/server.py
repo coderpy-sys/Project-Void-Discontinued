@@ -11,8 +11,6 @@ class Server(commands.Cog):
     @server.command(name="info", description="Get server information")
     async def server_info(self, ctx: discord.ApplicationContext):
         guild = ctx.guild
-
-        # get server details
         owner = guild.owner
         members = guild.member_count
         roles = len(guild.roles)
@@ -22,7 +20,6 @@ class Server(commands.Cog):
         threads = len(guild.threads)
         boost_count = guild.premium_subscription_count
         boost_tier = guild.premium_tier
-
         embed = discord.Embed(title=guild.name, color=discord.Color.blue())
         embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
         embed.add_field(name="Owner", value=owner, inline=True)
@@ -34,8 +31,7 @@ class Server(commands.Cog):
         embed.add_field(name="Threads", value=threads, inline=True)
         embed.add_field(name="Boost Count", value=f"{boost_count} (Tier {boost_tier})", inline=True)
         embed.set_footer(text=f"ID: {guild.id} | Server Created | {guild.created_at.strftime('%m/%d/%Y %I:%M %p')}")
-
         await ctx.respond(embed=embed)
-
+    
 def setup(bot):
     bot.add_cog(Server(bot))

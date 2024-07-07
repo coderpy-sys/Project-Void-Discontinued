@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import aiosqlite
 
-# uses config database
 class AFK(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -106,6 +105,9 @@ class AFK(commands.Cog):
         if message.author.bot:
             return
 
+        if not message.guild:
+            return
+
         await self.create_afk_table(message.guild.id)
         async with aiosqlite.connect("./db/configs.db") as db:
             table_name = f"afk_{message.guild.id}"
@@ -129,6 +131,8 @@ class AFK(commands.Cog):
         # Mention check for AFK users
         if message.mentions:
             for user in message.mentions:
+                if user.bot:
+                    continue
                 async with aiosqlite.connect("./db/configs.db") as db:
                     table_name = f"afk_{message.guild.id}"
                     async with db.execute(

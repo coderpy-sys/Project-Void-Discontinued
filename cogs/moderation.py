@@ -115,6 +115,15 @@ class Mod(commands.Cog):
                 rows = await cursor.fetchall()
                 return rows
 
+    async def remove_warn(self, guild_id, user_id, warn_id):
+        table_name = f"warns_{guild_id}"
+        async with aiosqlite.connect("./db/configs.db") as db:
+            await db.execute(
+                f"DELETE FROM {table_name} WHERE rowid = ? AND user_id = ?",
+                (warn_id, user_id)
+            )
+            await db.commit()
+
     warn = discord.SlashCommandGroup(name="warn", description="Warn commands")
 
     @warn.command(name="user", description="Warn a user")
@@ -150,6 +159,26 @@ class Mod(commands.Cog):
             )
             await ctx.respond(embed=embed)
 
+    @warn.command(name="remove", description="Remove a specific warning from a user")
+    async def warn_remove(self, ctx, user: discord.User, warn_id: int):
+        await self.create_warn_table(ctx.guild.id)
+        warns = await self.get_warns(ctx.guild.id, user.id)
 
+        if any(warn[0] == warn_id for warn in warns):
+            await self.remove_warn(ctx.guild.id, user.id, warn_id)
+            embed = discord.Embed(
+                title="Warning Removed",
+                description=f"Removed warning ID {warn_id} from {user.display_name}.",
+                color=discord.Color.green()
+            )
+            await ctx.respond(embed=embed)
+        else:
+            embed = discord.Embed(
+                title="Warning Not Found",
+                description=f"No warning with ID {warn_id} found for {user.display_name}.",
+                color=discord.Color.red()
+            )
+            await ctx.respond(embed=embed)
+            
 def setup(bot):
     bot.add_cog(Mod(bot))

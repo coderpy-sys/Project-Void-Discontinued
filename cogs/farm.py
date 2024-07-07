@@ -19,22 +19,24 @@ class Farm(commands.Cog):
                 user = await cursor.fetchone()
                 if user is None:
                     await db.execute(
-                        "INSERT INTO users (id, coins, weekly_timestamp, daily_timestamp) VALUES (?, ?, ?, ?)",
-                        (user_id, 0, 0, 0),
+                        "INSERT INTO users (id, coins, bank, weekly_timestamp, daily_timestamp) VALUES (?, ?, ?, ?, ?)",
+                        (user_id, 0, 0, 0, 0),
                     )
                     await db.commit()
                     return {
                         "coins": 0,
+                        "bank": 0,
                         "weekly_timestamp": 0,
                         "daily_timestamp": 0
                     }
                 else:
                     return {
                         "coins": user[1],
-                        "weekly_timestamp": user[2],
-                        "daily_timestamp": user[3]
+                        "bank": user[2],
+                        "weekly_timestamp": user[3],
+                        "daily_timestamp": user[4]
                     }
-
+                
     @tasks.loop(seconds=60)
     async def check_for_bio(self):
         ulen = 0
