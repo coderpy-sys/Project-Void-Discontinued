@@ -15,10 +15,8 @@ if not os.path.exists("db/"):
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 BIO_CHECK = os.getenv("BIO_CHECK")
-intents = discord.Intents.all()
+intents = discord.Intents.default()
 bot = discord.Bot(intents=intents)
-intents.messages = True
-intents.guilds = True
 
 start_time = time.time()
 

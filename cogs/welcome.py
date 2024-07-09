@@ -1,11 +1,12 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import aiosqlite
 
 class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.loop.create_task(self.initialize_db())
+        self.welcome_sent = set()
 
     async def initialize_db(self):
         async with aiosqlite.connect("db/configs.db") as db:
@@ -88,23 +89,29 @@ class Welcome(commands.Cog):
         await ctx.respond(embed=embed)
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
-        config = await self.get_welcome_config(member.guild.id)
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        if message.author.id in self.welcome_sent:
+            return
+
+        config = await self.get_welcome_config(message.guild.id)
         if config:
             channel_id, welcome_message, color, title = config
-            channel = member.guild.get_channel(channel_id)
+            channel = message.guild.get_channel(channel_id)
             if channel:
                 if not welcome_message:
                     welcome_message = "We are glad to have you, {member.mention}!"
-                welcome_message = welcome_message.format(member=member)
+                welcome_message = welcome_message.format(member=message.author)
                 color = color or "#89CFF0"  # Set default color if color is None
                 embed = discord.Embed(
-                    title=title or f"Welcome to {member.guild.name}!",
+                    title=title or f"Welcome to {message.guild.name}!",
                     description=welcome_message,
                     color=discord.Color(int(color.lstrip("#"), 16))
                 )
-                embed.set_thumbnail(url=member.avatar.url)
+                embed.set_thumbnail(url=message.author.avatar.url)
                 await channel.send(embed=embed)
+                self.welcome_sent.add(message.author.id)
 
 def setup(bot):
     bot.add_cog(Welcome(bot))
