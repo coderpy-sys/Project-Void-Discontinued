@@ -1,12 +1,11 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import aiosqlite
 
 class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.loop.create_task(self.initialize_db())
-        self.welcome_sent = set()
 
     async def initialize_db(self):
         async with aiosqlite.connect("db/configs.db") as db:
@@ -17,6 +16,13 @@ class Welcome(commands.Cog):
                     message TEXT,
                     color TEXT,
                     title TEXT
+                )
+            """)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS welcome_sent (
+                    guild_id INTEGER,
+                    user_id INTEGER,
+                    PRIMARY KEY (guild_id, user_id)
                 )
             """)
             await db.commit()
@@ -47,6 +53,21 @@ class Welcome(commands.Cog):
             await db.execute("""
                 DELETE FROM welcome_config WHERE guild_id = ?
             """, (guild_id,))
+            await db.commit()
+
+    async def has_welcome_been_sent(self, guild_id, user_id):
+        async with aiosqlite.connect("db/configs.db") as db:
+            async with db.execute("""
+                SELECT 1 FROM welcome_sent WHERE guild_id = ? AND user_id = ?
+            """, (guild_id, user_id)) as cursor:
+                return await cursor.fetchone() is not None
+
+    async def mark_welcome_as_sent(self, guild_id, user_id):
+        async with aiosqlite.connect("db/configs.db") as db:
+            await db.execute("""
+                INSERT INTO welcome_sent (guild_id, user_id)
+                VALUES (?, ?)
+            """, (guild_id, user_id))
             await db.commit()
 
     welcome = discord.SlashCommandGroup(name="welcome", description="Welcome commands")
@@ -92,10 +113,19 @@ class Welcome(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:
             return
-        if message.author.id in self.welcome_sent:
+
+        guild_id = message.guild.id
+        user_id = message.author.id
+
+        # Check if welcome has already been sent
+        if await self.has_welcome_been_sent(guild_id, user_id):
             return
 
-        config = await self.get_welcome_config(message.guild.id)
+        # Mark welcome as sent
+        await self.mark_welcome_as_sent(guild_id, user_id)
+
+        # Fetch welcome config
+        config = await self.get_welcome_config(guild_id)
         if config:
             channel_id, welcome_message, color, title = config
             channel = message.guild.get_channel(channel_id)
@@ -111,7 +141,6 @@ class Welcome(commands.Cog):
                 )
                 embed.set_thumbnail(url=message.author.avatar.url)
                 await channel.send(embed=embed)
-                self.welcome_sent.add(message.author.id)
 
 def setup(bot):
     bot.add_cog(Welcome(bot))

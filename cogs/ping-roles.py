@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord.commands import SlashCommandGroup
 import aiosqlite
 
-# uses configs configs
 class PingRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -90,15 +89,20 @@ class PingRoles(commands.Cog):
                 role_data = await cursor.fetchone()
                 if role_data:
                     guild = self.bot.get_guild(payload.guild_id)
-                    role = guild.get_role(role_data[0])
-                    await payload.member.add_roles(role)
+                    if guild:
+                        role = guild.get_role(role_data[0])
+                        member = guild.get_member(payload.user_id)
+                        if role and member:
+                            await member.add_roles(role)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
         guild = self.bot.get_guild(payload.guild_id)
-        member = guild.get_member(payload.user_id)
+        if not guild:
+            return
 
-        if member.bot:
+        member = guild.get_member(payload.user_id)
+        if not member or member.bot:
             return
 
         await self.create_table_if_not_exists(payload.guild_id)
@@ -111,7 +115,8 @@ class PingRoles(commands.Cog):
                 role_data = await cursor.fetchone()
                 if role_data:
                     role = guild.get_role(role_data[0])
-                    await member.remove_roles(role)
+                    if role:
+                        await member.remove_roles(role)
 
 def setup(bot):
     bot.add_cog(PingRoles(bot))
