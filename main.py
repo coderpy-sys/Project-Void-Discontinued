@@ -11,6 +11,8 @@ import traceback
 
 if not os.path.exists("db/"):
     os.makedirs("db/")
+if not os.path.exists("temp/"):
+    os.makedirs("temp/")
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")

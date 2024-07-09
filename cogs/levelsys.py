@@ -1,14 +1,31 @@
 import discord
 from discord.ext import commands
 import aiosqlite
+import aiohttp
 import random
 import time
+import json
+import os
 
 class Exp(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cooldown = {}
-        self.xp_cooldown = 120 # Cooldown time in seconds
+        self.xp_cooldown = 120  # Cooldown time in seconds
+        self.username_cache = {}
+        self.username_cache_file = "./temp/username_cache.json"
+        self.load_username_cache()
+
+    def load_username_cache(self):
+        if os.path.exists(self.username_cache_file):
+            with open(self.username_cache_file, 'r') as f:
+                self.username_cache = json.load(f)
+        else:
+            self.username_cache = {}
+
+    def save_username_cache(self):
+        with open(self.username_cache_file, 'w') as f:
+            json.dump(self.username_cache, f)
 
     async def create_user_table(self, guild_id):
         table_name = f"users_{guild_id}"
@@ -70,6 +87,22 @@ class Exp(commands.Cog):
                     )
                     await db.commit()
                     return False, 1
+
+    async def fetch_username(self, user_id):
+        if user_id in self.username_cache:
+            return self.username_cache[user_id]
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://discordlookup.mesalytic.moe/v1/user/{user_id}") as resp:
+                if resp.status == 200:
+                    user_data = await resp.json()
+                    username = user_data.get("username", f"User: {user_id}")
+                else:
+                    username = f"User: {user_id}"
+
+        self.username_cache[user_id] = username
+        self.save_username_cache()
+        return username
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -145,20 +178,15 @@ class Exp(commands.Cog):
         if not leaderboard_data:
             embed.description = "No data available."
         else:
-            for idx, (user_id, xp, level) in enumerate(leaderboard_data, start=1):
-                member = ctx.guild.get_member(user_id)
-                if member:
+            async with aiohttp.ClientSession() as session:
+                for idx, (user_id, xp, level) in enumerate(leaderboard_data, start=1):
+                    username = await self.fetch_username(user_id)
                     embed.add_field(
-                        name=f"#{idx}: {member.display_name}",
+                        name=f"#{idx}: {username}",
                         value=f"Level **{level}** with **{xp}** XP",
                         inline=False
                     )
-                else:
-                    embed.add_field(
-                        name=f"#{idx}: User ID {user_id}",
-                        value=f"Level **{level}** with **{xp}** XP",
-                        inline=False
-                    )
+
         embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
 

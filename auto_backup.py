@@ -9,6 +9,7 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 DB_PATHS = [
     "db/economy.db",
     "db/giveaways.db",
+    "db/levelsys.db",
     "db/configs.db"
 ]
 

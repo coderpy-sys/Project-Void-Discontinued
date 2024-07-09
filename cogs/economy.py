@@ -2,11 +2,44 @@ import discord
 from discord.ext import commands
 import aiosqlite
 import datetime
+import aiohttp
+import json
+import os
 
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.loop.create_task(self.initialize_db())
+        self.username_cache_file = "./temp/username_cache.json"
+        self.load_username_cache()
+
+    def load_username_cache(self):
+        if os.path.exists(self.username_cache_file):
+            with open(self.username_cache_file, 'r') as f:
+                self.username_cache = json.load(f)
+        else:
+            self.username_cache = {}
+
+    def save_username_cache(self):
+        with open(self.username_cache_file, 'w') as f:
+            json.dump(self.username_cache, f)
+
+    async def fetch_username(self, user_id):
+        if user_id in self.username_cache:
+            return self.username_cache[user_id]
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://discordlookup.mesalytic.moe/v1/user/{user_id}") as resp:
+                if resp.status == 200:
+                    user_data = await resp.json()
+                    username = user_data.get("username", f"User: {user_id}")
+                else:
+                    username = f"User: {user_id}"
+
+        self.username_cache[user_id] = username
+        self.save_username_cache()
+        return username
+
 
     async def initialize_db(self):
         async with aiosqlite.connect("./db/economy.db") as db:
@@ -127,30 +160,33 @@ class Economy(commands.Cog):
         embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
         await ctx.respond(embed=embed)
 
-    @economy.command(name="leaderboard", description="Show the Richest users")
+    @economy.command(name="leaderboard", description="Show the richest users")
     async def leaderboard(self, ctx):
         async with aiosqlite.connect("./db/economy.db") as db:
             async with db.execute("SELECT * FROM users ORDER BY coins DESC LIMIT 10") as cursor:
                 users = await cursor.fetchall()
                 embed = discord.Embed(
-                    title="Economy Leaderboard", description="", color=discord.Color.blue()
+                    title="Economy Leaderboard",
+                    description="",
+                    color=discord.Color.blue()
                 )
-                for idx, user in enumerate(users, start=1):
-                    member = ctx.guild.get_member(user[0])
-                    if member:
-                        embed.add_field(
-                            name=f"#{idx}: {member.display_name}",
-                            value=f"**{user[1]}** Coins",
-                            inline=False
-                        )
-                    else:
-                        embed.add_field(
-                            name=f"#{idx}: User: {user[0]}",
-                            value=f"**{user[1]}** Coins",
-                            inline=False
-                        )
+
+                if not users:
+                    embed.description = "No data available."
+                else:
+                    async with aiohttp.ClientSession() as session:
+                        for idx, user in enumerate(users, start=1):
+                            user_id = user[0]
+                            username = await self.fetch_username(user_id)
+                            
+                            embed.add_field(
+                                name=f"#{idx}: {username}",
+                                value=f"**{user[1]}** Coins",
+                                inline=False
+                            )
+
                 embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
-                await ctx.respond(embed=embed)
+                await ctx.send(embed=embed)
 
     @economy.command(name="transfer", description="Transfer coins to another user")
     async def transfer(self, ctx, recipient: discord.Member, amount: int):

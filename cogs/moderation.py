@@ -10,7 +10,7 @@ load_dotenv("../.env")
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.footer_text = "Made by Voidsudo"
+        self.footer_text = "Made by Void Team"
         
     async def send_embed(self, ctx, title, description, color):
         embed = discord.Embed(
