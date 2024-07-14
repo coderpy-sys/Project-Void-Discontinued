@@ -186,7 +186,7 @@ class Economy(commands.Cog):
                             )
 
                 embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
-                await ctx.send(embed=embed)
+                await ctx.respond(embed=embed)
 
     @economy.command(name="transfer", description="Transfer coins to another user")
     async def transfer(self, ctx, recipient: discord.Member, amount: int):
