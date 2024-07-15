@@ -126,7 +126,7 @@ class Exp(commands.Cog):
                 description=f"Congratulations {message.author.mention}, you have reached level {new_level}!",
                 color=discord.Color.gold()
             )
-            embed.set_thumbnail(url=message.author.avatar.url)
+            embed.set_thumbnail(url=message.author.avatar.url if message.author.avatar else "https://i.postimg.cc/3rkmJxYD/Untitled-design-2.png")
             level_up_message = await message.channel.send(embed=embed)
             await level_up_message.delete(delay=5)
 
