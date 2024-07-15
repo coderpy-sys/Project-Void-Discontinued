@@ -68,7 +68,7 @@ class Bank(commands.Cog):
             description=f"You have deposited {amount} coins into your bank.",
             color=discord.Color.green()
         )
-        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
         await ctx.respond(embed=embed)
 
     @bank.command(name="balance", description="Check your bank balance")
@@ -105,7 +105,7 @@ class Bank(commands.Cog):
             description=f"You have withdrawn {amount} coins from your bank.",
             color=discord.Color.green()
         )
-        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
         await ctx.respond(embed=embed)
 
 def setup(bot):

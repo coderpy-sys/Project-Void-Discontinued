@@ -76,6 +76,18 @@ class Giveaway(commands.Cog):
 
     async def initialize_db(self):
         async with aiosqlite.connect("./db/giveaways.db") as db:
+            for guild in self.bot.guilds:
+                await db.execute(f"""
+                    CREATE TABLE IF NOT EXISTS giveaways_{guild.id} (
+                        channel_id INTEGER,
+                        message_id INTEGER,
+                        prize TEXT,
+                        end_time INTEGER,
+                        num_winners INTEGER,
+                        host_id INTEGER,
+                        participants TEXT
+                    )
+                """)
             await db.commit()
 
     async def ensure_guild_table(self, guild_id):

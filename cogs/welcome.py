@@ -75,10 +75,6 @@ class Welcome(commands.Cog):
     @welcome.command(name="customize", description="Customize the welcome message")
     @commands.has_permissions(administrator=True)
     async def welcome_customize(self, ctx, message: str, color: str = "#89CFF0", title: str = None):
-        description = (
-            "Customize the welcome message. "
-            "Use {member.mention} to mention the new member."
-        )
         await self.set_welcome_config(ctx.guild.id, message=message, color=color, title=title)
         embed = discord.Embed(
             title="Welcome Message Customized",
@@ -103,7 +99,7 @@ class Welcome(commands.Cog):
                     description=welcome_message,
                     color=discord.Color(int(color.lstrip("#"), 16))
                 )
-                embed.set_thumbnail(url=member.avatar.url)
+                embed.set_thumbnail(url=member.avatar.url if member.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
                 await channel.send(embed=embed)
 
 def setup(bot):

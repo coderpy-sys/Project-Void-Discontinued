@@ -126,7 +126,7 @@ class Exp(commands.Cog):
                 description=f"Congratulations {message.author.mention}, you have reached level {new_level}!",
                 color=discord.Color.gold()
             )
-            embed.set_thumbnail(url=message.author.avatar.url if message.author.avatar else "https://i.postimg.cc/3rkmJxYD/Untitled-design-2.png")
+            embed.set_thumbnail(url=message.author.avatar.url if message.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
             level_up_message = await message.channel.send(embed=embed)
             await level_up_message.delete(delay=5)
 
@@ -143,7 +143,7 @@ class Exp(commands.Cog):
             color=discord.Color.blue()
         )
         embed.set_thumbnail(url=member.avatar.url)
-        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
         
         await ctx.respond(embed=embed)
 
@@ -158,7 +158,7 @@ class Exp(commands.Cog):
         embed.add_field(name="Level", value=level, inline=True)
         embed.add_field(name="XP", value=xp, inline=True)
         embed.set_thumbnail(url=ctx.author.avatar.url)
-        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
         await ctx.respond(embed=embed)
 
     @exp.command(name="leaderboard", description="Show the leaderboard for XP and levels")
@@ -187,7 +187,7 @@ class Exp(commands.Cog):
                         inline=False
                     )
 
-        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
         await ctx.respond(embed=embed)
 
 def setup(bot):

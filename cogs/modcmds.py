@@ -10,15 +10,14 @@ load_dotenv("../.env")
 class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.footer_text = "Made by Void Team"
-        
+
     async def send_embed(self, ctx, title, description, color):
         embed = discord.Embed(
             title=title,
             description=description,
-            color=0x4863A0
+            color=color
         )
-        embed.set_footer(text=self.footer_text)
+        embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
         await ctx.respond(embed=embed)
 
     @discord.slash_command(name="ban", description="Ban a member from the server.")
@@ -62,7 +61,7 @@ class Mod(commands.Cog):
         except Exception as e:
             await self.send_embed(ctx, "Error", str(e), discord.Color.red())
 
-    @commands.slash_command(name="unban", description="Unban a member from the server.")
+    @discord.slash_command(name="unban", description="Unban a member from the server.")
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, member: discord.User, reason: str = None):
         await ctx.defer()
@@ -74,19 +73,19 @@ class Mod(commands.Cog):
         except discord.NotFound:
             await self.send_embed(ctx, "Error", "Member not found or not banned", discord.Color.red())
 
-    @commands.slash_command(name="untimeout", description="Unmute a member from the server.")
+    @discord.slash_command(name="untimeout", description="Unmute a member from the server.")
     @commands.has_permissions(moderate_members=True)
     async def untimeout(self, ctx, member: discord.Member, reason: str = None):
         await ctx.defer(ephemeral=True)
         try:
             await member.remove_timeout(reason=reason)
-            await self.send_embed(ctx, "Member Untimed Out", f"{member.mention} was untimeout", discord.Color.green())
+            await self.send_embed(ctx, "Member Untimed Out", f"{member.mention} was untimed out", discord.Color.green())
         except discord.Forbidden:
             await self.send_embed(ctx, "Error", "Need Higher Permissions", discord.Color.red())
         except Exception as e:
             await self.send_embed(ctx, "Error", str(e), discord.Color.red())
 
-            ## WARNING SYSTEM
+    ## WARNING SYSTEM
 
     async def create_warn_table(self, guild_id):
         table_name = f"warns_{guild_id}"
@@ -109,7 +108,7 @@ class Mod(commands.Cog):
         table_name = f"warns_{guild_id}"
         async with aiosqlite.connect("./db/configs.db") as db:
             async with db.execute(
-                f"SELECT reason FROM {table_name} WHERE user_id = ?",
+                f"SELECT rowid, reason FROM {table_name} WHERE user_id = ?",
                 (user_id,)
             ) as cursor:
                 rows = await cursor.fetchall()
@@ -149,7 +148,7 @@ class Mod(commands.Cog):
                 color=discord.Color.orange()
             )
             for idx, warn in enumerate(warns, 1):
-                embed.add_field(name=f"Warning {idx}", value=warn[0], inline=False)
+                embed.add_field(name=f"Warning {idx}", value=warn[1], inline=False)
             await ctx.respond(embed=embed)
         else:
             embed = discord.Embed(
@@ -179,6 +178,6 @@ class Mod(commands.Cog):
                 color=discord.Color.red()
             )
             await ctx.respond(embed=embed)
-            
+
 def setup(bot):
     bot.add_cog(Mod(bot))

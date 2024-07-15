@@ -47,7 +47,7 @@ class AFK(commands.Cog):
                 description=f"Set your AFK status to: {reason}",
                 color=discord.Color.orange()
             )
-            embed.set_footer(text="Made by Voidsudo")
+            embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
 
             try:
                 await ctx.respond(embed=embed, delete_after=5)
@@ -66,7 +66,7 @@ class AFK(commands.Cog):
             description="Cleared all AFK statuses for this server.",
             color=discord.Color.green()
         )
-        embed.set_footer(text="Made by Voidsudo")
+        embed.set_footer(text="Requested by " + ctx.author.display_name, icon_url=ctx.author.avatar.url if ctx.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
         try:
             await ctx.respond(embed=embed, delete_after=5)
         except discord.HTTPException as e:
@@ -122,7 +122,7 @@ class AFK(commands.Cog):
                         description=f"{message.author.mention} You are no longer AFK.",
                         color=discord.Color.green()
                     )
-                    embed.set_footer(text="Made by Voidsudo")
+                    embed.set_footer(text="Requested by " + message.author.display_name, icon_url=message.author.avatar.url if message.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
                     try:
                         await message.channel.send(embed=embed, delete_after=5)
                     except discord.HTTPException as e:
@@ -145,7 +145,7 @@ class AFK(commands.Cog):
                                 description=f"{user.display_name} is AFK: {row[0]}",
                                 color=discord.Color.orange()
                             )
-                            embed.set_footer(text="Made by Voidsudo")
+                            embed.set_footer(text="Requested by " + message.author.display_name, icon_url=message.author.avatar.url if message.author.avatar else "https://i.postimg.cc/fLQ8T6F6/NO-USER.png")
                             try:
                                 await message.channel.send(embed=embed, delete_after=5)
                             except discord.HTTPException as e:
